@@ -1,0 +1,41 @@
+name: Monthly SEC Data Fetcher
+
+on:
+  schedule:
+    # รันทุกวันที่ 1 ของเดือน เวลา 09:00 น. ตามเวลาไทย (UTC 02:00)
+    - cron: '0 2 1 * *'
+  # ปุ่มสำหรับกดสั่งรันด้วยมือเพื่อทดสอบ
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas
+
+      - name: Run data fetch script
+        env:
+          SEC_API_KEY: ${{ secrets.SEC_API_KEY }}
+        run: |
+          python fetch_funds.py
+
+      - name: Commit and push funds_data.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add funds_data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update fund data: $(date '+%Y-%m-%d')" && git push)
