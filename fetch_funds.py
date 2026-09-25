@@ -104,12 +104,9 @@ if not df.empty:
     # 7. จัดการคอลัมน์และบันทึก
     desired_cols = [
         "unique_id", "comp_name_th", "comp_name_en", "proj_id", "regis_id", 
-        "init_date", "regis_date", "cancel_date", "proj_name_th", "proj_name_en", 
-        "proj_abbr_name", "fund_status", "invest_country_flag", "proj_retail_type", 
-        "proj_term_flag", "proj_term_day", "proj_term_month", "proj_term_year", 
-        "policy_desc", "investment_policy_desc", "management_style", 
-        "feederfund_master_fund", "Master_Fund_Search", "feederfund_country", 
-        "exchange_rate_protection_policy", "fund_class_name", "fund_class_detail", 
+        , "regis_date", "proj_name_th", "proj_name_en", 
+        "proj_abbr_name", "fund_status", "policy_desc", "investment_policy_desc", "management_style", 
+        "feederfund_master_fund", "Master_Fund_Search", "exchange_rate_protection_policy", "fund_class_name", "fund_class_detail", 
         "fund_class_description", "fund_class_tax_incentive_type", 
         "fund_class_isin_code", "last_upd_date", "Search_Name"
     ]
