@@ -102,9 +102,9 @@ if not df.empty:
     df["Master_Fund_Search"] = df["feederfund_master_fund"].apply(clean_master_fund_name)
 
     # 7. จัดการคอลัมน์และบันทึก
-    desired_cols = [
+        desired_cols = [
         "unique_id", "comp_name_th", "comp_name_en", "proj_id", "regis_id", 
-        , "regis_date", "proj_name_th", "proj_name_en", 
+        "regis_date", "proj_name_th", "proj_name_en", 
         "proj_abbr_name", "fund_status", "policy_desc", "investment_policy_desc", "management_style", 
         "feederfund_master_fund", "Master_Fund_Search", "exchange_rate_protection_policy", "fund_class_name", "fund_class_detail", 
         "fund_class_description", "fund_class_tax_incentive_type", 
