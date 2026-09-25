@@ -101,8 +101,8 @@ if not df.empty:
 
     df["Master_Fund_Search"] = df["feederfund_master_fund"].apply(clean_master_fund_name)
 
-    # 7. จัดการคอลัมน์และบันทึก
-        desired_cols = [
+    # 7. คัดเลือกเฉพาะคอลัมน์ที่ต้องการใช้งาน
+    desired_cols = [
         "unique_id", "comp_name_th", "comp_name_en", "proj_id", "regis_id", 
         "regis_date", "proj_name_th", "proj_name_en", 
         "proj_abbr_name", "fund_status", "policy_desc", "investment_policy_desc", "management_style", 
@@ -110,12 +110,11 @@ if not df.empty:
         "fund_class_description", "fund_class_tax_incentive_type", 
         "fund_class_isin_code", "last_upd_date", "Search_Name"
     ]
-    
-    final_cols = [col for col in desired_cols if col in df.columns]
-    remaining_cols = [col for col in df.columns if col not in final_cols]
-    result_df = df[final_cols + remaining_cols]
 
-    # บันทึกเป็น JSON เท่านั้นสำหรับเว็บ
+    final_cols = [col for col in desired_cols if col in df.columns]
+    result_df = df[final_cols]
+
+    # บันทึกเป็น JSON เท่านั้น
     output_filename = "funds_data.json"
     result_df.to_json(output_filename, orient="records", force_ascii=False)
     print(f"บันทึกไฟล์สำเร็จ: {output_filename} (จำนวน {len(result_df)} รายการ)")
