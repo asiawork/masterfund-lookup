@@ -86,8 +86,9 @@ if not df.empty:
         # แทนที่ en-dash ด้วย hyphen ปกติ
         text = text.replace("–", "-")
 
-        # ตัดคำนำหน้าภาษาไทย
-        prefix_pattern = r"^(ชื่อกองทุน\s*:\s*|กองทุนหลัก\s*:\s*|กองทุนเปิด\s+|กองทุน\s+)"
+        # ตัดคำนำหน้า เช่น "ชื่อกองทุนหลัก :", "ชื่อกองทุน :", "กองทุนหลัก :", "Master Fund :",
+        # "กองทุนเปิด ...", "กองทุน ..." (รองรับทั้ง : ปกติและ ： แบบเต็มความกว้าง)
+        prefix_pattern = r"^\s*((ชื่อ\s*)?กองทุน\s*(หลัก)?\s*[:：]\s*|master\s*fund\s*(name)?\s*[:：]\s*|กองทุนเปิด\s+|กองทุน\s+)"
         text = re.sub(prefix_pattern, "", text, flags=re.IGNORECASE)
 
         # ตัดข้อความตั้งแต่ Class เป็นต้นไป เช่น (Class...), , Class..., - Class..., Class...
@@ -95,7 +96,7 @@ if not df.empty:
         text = re.sub(class_pattern, "", text, flags=re.IGNORECASE)
 
         # เก็บกวาดเครื่องหมายตกค้างหน้า-หลังข้อความ
-        text = text.strip(" :-–,()")
+        text = text.strip(" :：-–,()")
 
         return text.strip()
 
