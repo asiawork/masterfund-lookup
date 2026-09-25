@@ -1,4 +1,4 @@
-name: Monthly SEC Data Fetcher
+name: SEC Data Fetcher
 
 on:
   # รันเมื่อกดปุ่ม Run workflow ในแท็บ Actions เท่านั้น
