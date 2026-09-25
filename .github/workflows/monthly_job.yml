@@ -1,10 +1,7 @@
 name: Monthly SEC Data Fetcher
 
 on:
-  schedule:
-    # รันทุกวันที่ 1 ของเดือน เวลา 09:00 น. ตามเวลาไทย (UTC 02:00)
-    - cron: '0 2 1 * *'
-  # ปุ่มสำหรับกดสั่งรันด้วยมือเพื่อทดสอบ
+  # รันเมื่อกดปุ่ม Run workflow ในแท็บ Actions เท่านั้น
   workflow_dispatch:
 
 jobs:
