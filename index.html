@@ -525,8 +525,7 @@ function showMaster(m, hitAbbr) {
       <td class="c-amc" data-label="บลจ."><span class="amc" title="${esc(r.comp_name_th)}">${esc(amcAbbr(r.comp_name_th))}</span></td>
       <td class="c-cls" data-label="Class">${classLines}</td>
       <td class="c-st" data-label="กลยุทธ์ลงทุน">${styleCell(r.management_style)}</td>
-      <td class="c-fx" data-label="นโยบายค่าเงิน">${fxFull && fxShort(fxFull) !== fxFull
-        ? `<span class="tip" tabindex="0" data-tip="${esc(fxFull)}">${esc(fxShort(fxFull))}</span>` : esc(fxShort(fxFull))}</td>
+      <td class="c-fx" data-label="นโยบายค่าเงิน">${esc(fxShort(fxFull))}</td>
     </tr>`;
   }).join("");
 
