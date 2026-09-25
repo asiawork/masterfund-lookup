@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Master Fund Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #13294B;
+    --text: #1C2738;
+    --muted: #6B7A90;
+    --line: #DDE3EC;
+    --lotus: #2A5CAA;
+    --wash: #F3F6FB;
+    --hover: #E7EAEF;
+    --mark: #FFE9A8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #F7F8FA; color: var(--text);
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
+    font-size: 15px; line-height: 1.6;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  header.wrap { padding-top: 40px; padding-bottom: 8px; }
+  h1 { margin: 0; font-size: 34px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; }
+  .sub { margin: 2px 0 20px; color: var(--muted); }
+
+  /* ---------- combobox ---------- */
+  .combo { position: relative; }
+  .field {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    padding: 0 16px; box-shadow: 0 1px 2px rgba(19,41,75,.06);
+  }
+  .field:focus-within { border-color: var(--lotus); box-shadow: 0 0 0 3px rgba(42,92,170,.15); }
+  .field svg { flex: none; color: var(--muted); }
+  .field input {
+    flex: 1; border: 0; outline: none; background: none; font: inherit; font-size: 18px;
+    padding: 16px 0; color: var(--text); min-width: 0;
+  }
+  .clear {
+    flex: none; width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;
+    background: #6B7A90; color: #fff; font-size: 14px; line-height: 24px; padding: 0;
+  }
+  .clear:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+
+  .dropdown {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(19,41,75,.14); max-height: min(460px, 55vh); max-height: min(460px, 55dvh); overflow-y: auto; -webkit-overflow-scrolling: touch;
+    list-style: none; margin: 0; padding: 6px 0;
+  }
+  .group-label { padding: 10px 20px 4px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .opt { padding: 10px 20px; cursor: pointer; }
+  .opt[aria-selected="true"] { background: var(--hover); }
+  .opt .t { font-weight: 700; color: var(--ink); font-size: 16px; line-height: 1.4; }
+  .opt .d { color: var(--muted); font-size: 13.5px; line-height: 1.5; margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opt-empty { padding: 14px 20px; color: var(--muted); }
+  mark { background: var(--mark); color: inherit; border-radius: 2px; }
+
+  .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+  .stats { color: var(--muted); font-size: 13px; padding-top: 6px; white-space: nowrap; }
+
+  /* ---------- result ---------- */
+  main.wrap { padding-top: 24px; padding-bottom: 60px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+  .detail h2 { margin: 0; font-size: 22px; color: var(--ink); line-height: 1.35; }
+  .meta { color: var(--muted); margin: 6px 0 18px; font-size: 14px; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .btn {
+    font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--lotus); background: #fff; color: var(--lotus);
+  }
+  .btn:hover { background: var(--wash); }
+  .btn:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { background: var(--wash); font-size: 13px; font-weight: 600; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  tr.hit td { background: #FFFBEA; }
+  .abbr { font-weight: 700; color: var(--ink); }
+  .small { color: var(--muted); font-size: 13px; }
+  .amc { font-weight: 600; }
+  table { table-layout: fixed; }
+  .c-fund { width: 30%; } .c-amc { width: 14%; } .c-cls { width: 22%; } .c-st { width: 16%; } .c-fx { width: 18%; }
+  td.c-fund .abbr, td.c-amc .amc { font-size: 16px; line-height: 1.5; }
+  .cls { font-size: 15px; line-height: 1.5; padding: 0; }
+  .cls + .cls { margin-top: 6px; }
+  .tax { font-size: 11.5px; color: var(--lotus); border: 1px solid #C9D7EE; border-radius: 4px; padding: 0 5px; margin-left: 4px; vertical-align: 1px; }
+  td.c-fx, td.c-st { font-size: 15px; }
+  .code { font-weight: 600; color: var(--ink); margin-right: 4px; }
+  /* hover / tap for full wording */
+  .tip { cursor: help; border-bottom: 1px dotted #9AA8BD; outline: none; }
+  .tip:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; border-radius: 2px; }
+  #tipbox {
+    position: fixed; z-index: 50; max-width: 300px; padding: 9px 12px; border-radius: 8px;
+    background: var(--ink); color: #fff; font-size: 13px; line-height: 1.55;
+    box-shadow: 0 8px 24px rgba(19,41,75,.25); pointer-events: none;
+  }
+  .variants { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  .variants ul { margin: 6px 0 0; padding-left: 18px; }
+
+  .top h2 { margin: 0 0 12px; font-size: 17px; color: var(--ink); }
+  .top-list { list-style: none; margin: 0; padding: 0; }
+  .top-list button {
+    display: flex; justify-content: space-between; gap: 12px; width: 100%; text-align: left;
+    font: inherit; color: var(--text); background: none; border: 0; border-top: 1px solid var(--line);
+    padding: 11px 4px; cursor: pointer;
+  }
+  .top-list li:first-child button { border-top: 0; }
+  .top-list button:hover { background: var(--wash); }
+  .top-list button:focus-visible { outline: 2px solid var(--lotus); outline-offset: -2px; }
+  .count { flex: none; color: var(--lotus); font-weight: 600; }
+
+  .upload { text-align: center; }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 640px) {
+    .wrap { padding: 0 14px; }
+    header.wrap { padding-top: 20px; padding-bottom: 4px; }
+    h1 { font-size: 26px; }
+    .sub { font-size: 14px; margin-bottom: 14px; }
+    .field input { font-size: 16px; padding: 14px 0; }   /* 16px+ stops iOS from zooming in */
+    .opt { padding: 12px 16px; }
+    .group-label { padding: 10px 16px 4px; }
+    main.wrap { padding-top: 16px; padding-bottom: 40px; }
+    .card { padding: 16px; border-radius: 10px; }
+    .detail h2 { font-size: 19px; }
+    .toolbar .btn { flex: 1; padding: 10px 12px; }
+
+    /* table becomes stacked cards */
+    .table-scroll { overflow: visible; border: 0; }
+    table { min-width: 0; }
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; padding: 6px 0; }
+    tr.hit { background: #FFFBEA; }
+    tr.hit td { background: none; }
+    td { border: 0; padding: 6px 14px; }
+    td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: var(--muted); }
+    table { table-layout: auto; }
+    .c-fund, .c-amc, .c-cls, .c-st, .c-fx { width: 100%; }
+    .head-row { flex-direction: column; gap: 2px; margin-bottom: 14px; }
+    .stats { padding-top: 0; }
+    .top-list button { padding: 12px 2px; }
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="head-row">
+    <h1>Master Fund Search</h1>
+    <div class="stats" id="stats">กำลังโหลดข้อมูล…</div>
+  </div>
+
+  <div class="combo" id="combo">
+    <div class="field">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="text" autocomplete="off" spellcheck="false"
+             placeholder="ระบุชื่อ Master Fund หรือชื่อย่อกองทุนไทย เช่น SPDR Gold Trust"
+             role="combobox" aria-expanded="false" aria-controls="dd" aria-autocomplete="list" aria-label="ค้นหา master fund หรือกองทุนไทย">
+      <button class="clear hidden" id="clear" type="button" aria-label="ล้างคำค้น">✕</button>
+    </div>
+    <ul class="dropdown hidden" id="dd" role="listbox"></ul>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="upload" class="card upload hidden">
+    <p>โหลดข้อมูลอัตโนมัติไม่ได้ (มักเกิดเมื่อเปิดไฟล์จากเครื่องโดยตรง)</p>
+    <p>เลือกไฟล์ <b>funds_data.json</b> (และ <b>amc_abbr.csv</b> ถ้ามี) พร้อมกันได้เลย</p>
+    <input type="file" id="file" accept=".json,.csv" multiple>
+  </div>
+  <section id="result" aria-live="polite"></section>
+</main>
+
+<div id="tipbox" class="hidden" role="tooltip"></div>
+
+<script>
+const DATA_URL = "funds_data.json";
+const AMC_URL  = "amc_abbr.csv";
+const MAX_MASTERS = 8, MAX_FUNDS = 6;
+
+let MASTERS = [], MASTER_BY_KEY = new Map(), FUNDS = [], AMC = new Map();
+let items = [], active = -1;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s ?? "").toLowerCase().replace(/[–—]/g, "-").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const clean = v => { const s = String(v ?? "").trim(); return ["", "none", "nan", "null"].includes(s.toLowerCase()) ? "" : s; };
+
+// ---------- AMC abbreviation ----------
+const amcKey = s => String(s ?? "")
+  .replace(/บริษัท|หลักทรัพย์|จัดการกองทุนรวม|จัดการกองทุน|จำกัด|\(มหาชน\)|มหาชน|\(ประเทศไทย\)|ประเทศไทย/g, "")
+  .replace(/[\s()]/g, "").toLowerCase();
+const amcShortTh = s => String(s ?? "")
+  .replace(/^บริษัท\s*หลักทรัพย์\s*จัดการกองทุน(รวม)?\s*/, "").replace(/\s*จำกัด.*$/, "").trim();
+function parseAmc(text) {
+  AMC = new Map();
+  text.replace(/^\uFEFF/, "").split(/\r?\n/).slice(1).forEach(line => {
+    const [abbr, ...rest] = line.split(",");
+    const name = rest.join(",").replace(/^"|"$/g, "").trim();
+    if (abbr && name) AMC.set(amcKey(name), abbr.trim());
+  });
+}
+const amcAbbr = name => AMC.get(amcKey(name)) || amcShortTh(name);
+
+// ---------- load ----------
+Promise.all([
+  fetch(DATA_URL, { cache: "no-cache" }).then(r => r.ok ? r.json() : Promise.reject()),
+  fetch(AMC_URL, { cache: "no-cache" }).then(r => r.ok ? r.text() : "").catch(() => "")
+]).then(([rows, csv]) => { if (csv) parseAmc(csv); init(rows); })
+  .catch(() => { $("upload").classList.remove("hidden"); $("stats").textContent = ""; });
+
+$("file").addEventListener("change", async e => {
+  let rows = null;
+  for (const f of e.target.files) {
+    const t = await f.text();
+    if (f.name.toLowerCase().endsWith(".csv")) parseAmc(t); else rows = JSON.parse(t);
+  }
+  if (rows) { $("upload").classList.add("hidden"); init(rows); }
+});
+
+function init(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    const name = clean(r.Master_Fund_Search) || clean(r.feederfund_master_fund);
+    if (!name) continue;
+    const key = norm(name);
+    if (!map.has(key)) map.set(key, { key, name, rows: [], variants: new Set(), countries: new Set() });
+    const m = map.get(key);
+    m.rows.push(r);
+    if (clean(r.feederfund_master_fund)) m.variants.add(clean(r.feederfund_master_fund));
+    if (clean(r.feederfund_country)) m.countries.add(clean(r.feederfund_country));
+  }
+  MASTERS = [...map.values()].map(m => {
+    const projs = new Map();
+    m.rows.forEach(r => { const k = r.proj_id || r.proj_abbr_name; if (!projs.has(k)) projs.set(k, r); });
+    const amcs = [...new Set([...projs.values()].map(r => amcAbbr(r.comp_name_th)))].sort();
+    return { ...m, projects: projs.size, amcs };
+  }).sort((a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
+  MASTER_BY_KEY = new Map(MASTERS.map(m => [m.key, m]));
+
+  // Thai funds (one entry per project, searchable by abbr, class names, Thai/English names)
+  const fmap = new Map();
+  for (const m of MASTERS) for (const r of m.rows) {
+    const k = r.proj_id || r.proj_abbr_name;
+    if (!fmap.has(k)) fmap.set(k, { abbr: clean(r.proj_abbr_name), nameTh: clean(r.proj_name_th), master: m, classes: new Set(), amc: amcAbbr(r.comp_name_th),
+                                    extra: [r.proj_name_en] });
+    const f = fmap.get(k);
+    if (clean(r.Search_Name)) f.classes.add(clean(r.Search_Name));
+  }
+  FUNDS = [...fmap.values()].map(f => ({ ...f, key: norm([f.abbr, ...f.classes, f.nameTh, ...f.extra].join(" ")) }));
+
+  const amcCount = new Set(rows.map(r => r.comp_name_th)).size;
+  const lastUpd = rows.map(r => String(r.last_upd_date || "")).sort().pop() || "";
+  const d = lastUpd ? new Date(lastUpd.slice(0, 10)) : null;
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  $("stats").textContent = d && !isNaN(d) ? `ข้อมูล SEC ล่าสุด ${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}` : "";
+  $("stats").title = `Master fund ${MASTERS.length.toLocaleString()} กอง · กองทุนไทย ${FUNDS.length.toLocaleString()} กอง จาก ${amcCount} บลจ.`;
+
+  const p = new URLSearchParams(location.search).get("master");
+  const m = p && MASTER_BY_KEY.get(norm(p));
+  if (m) choose({ type: "master", m }); else showHome();
+}
+
+// ---------- combobox ----------
+const input = $("q"), dd = $("dd");
+
+function highlight(text, tokens) {
+  let out = esc(text);
+  for (const t of tokens) {
+    if (t.length < 1) continue;
+    const re = new RegExp(`(${esc(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    out = out.replace(re, "<mark>$1</mark>");
+  }
+  return out;
+}
+
+function buildItems(q) {
+  const tokens = norm(q).split(" ").filter(Boolean);
+  if (!tokens.length) return { tokens, list: [] };
+  const full = norm(q);
+  const masters = MASTERS.filter(m => tokens.every(t => m.key.includes(t)))
+    .sort((a, b) => (b.key.startsWith(full) - a.key.startsWith(full)) || b.projects - a.projects)
+    .slice(0, MAX_MASTERS);
+  const funds = FUNDS.filter(f => tokens.every(t => f.key.includes(t)))
+    .sort((a, b) => (norm(b.abbr).startsWith(full) - norm(a.abbr).startsWith(full)) || a.abbr.localeCompare(b.abbr))
+    .slice(0, MAX_FUNDS);
+  return { tokens, list: [...masters.map(m => ({ type: "master", m })), ...funds.map(f => ({ type: "fund", f }))] };
+}
+
+function renderDropdown() {
+  const q = input.value;
+  $("clear").classList.toggle("hidden", !q);
+  const { tokens, list } = buildItems(q);
+  items = list; active = list.length ? 0 : -1;
+  if (!q.trim()) return closeDropdown();
+
+  let html = "", lastType = null;
+  list.forEach((it, i) => {
+    if (it.type !== lastType) {
+      html += `<li class="group-label" role="presentation">${it.type === "master" ? "Master fund" : "กองทุนไทย"}</li>`;
+      lastType = it.type;
+    }
+    if (it.type === "master") {
+      const m = it.m;
+      html += `<li class="opt" role="option" id="opt${i}" data-i="${i}">
+        <div class="t">${highlight(m.name, tokens)}</div>
+        <div class="d">กองทุนไทย ${m.projects} กอง · ${esc(m.amcs.join(", "))}</div></li>`;
+    } else {
+      const f = it.f;
+      html += `<li class="opt" role="option" id="opt${i}" data-i="${i}">
+        <div class="t">${highlight(f.abbr, tokens)} <span class="small" style="font-weight:500">${esc(f.amc)}</span></div>
+        <div class="d">ลงทุนใน ${esc(f.master.name)}</div></li>`;
+    }
+  });
+  if (!list.length) html = `<li class="opt-empty">ไม่พบ “${esc(q)}” ลองพิมพ์ให้สั้นลง เช่น ชื่อบริษัทจัดการต่างประเทศ หรือคำหลักของกองทุน</li>`;
+  dd.innerHTML = html;
+  dd.classList.remove("hidden");
+  input.setAttribute("aria-expanded", "true");
+  paintActive();
+}
+
+function paintActive() {
+  dd.querySelectorAll(".opt").forEach(el => el.setAttribute("aria-selected", +el.dataset.i === active));
+  const el = $("opt" + active);
+  if (el) { el.scrollIntoView({ block: "nearest" }); input.setAttribute("aria-activedescendant", el.id); }
+  else input.removeAttribute("aria-activedescendant");
+}
+
+function closeDropdown() {
+  dd.classList.add("hidden");
+  input.setAttribute("aria-expanded", "false");
+  input.removeAttribute("aria-activedescendant");
+}
+
+input.addEventListener("input", renderDropdown);
+const isPhone = () => window.matchMedia("(max-width: 640px)").matches;
+input.addEventListener("focus", () => {
+  if (input.value.trim()) renderDropdown();
+  if (isPhone()) setTimeout(() => $("combo").scrollIntoView({ block: "start", behavior: "smooth" }), 250);
+});
+input.addEventListener("keydown", e => {
+  if (dd.classList.contains("hidden") && e.key === "ArrowDown") { renderDropdown(); return; }
+  if (e.key === "ArrowDown") { e.preventDefault(); if (items.length) { active = (active + 1) % items.length; paintActive(); } }
+  else if (e.key === "ArrowUp") { e.preventDefault(); if (items.length) { active = (active - 1 + items.length) % items.length; paintActive(); } }
+  else if (e.key === "Enter") { e.preventDefault(); if (items[active]) choose(items[active]); }
+  else if (e.key === "Escape") { closeDropdown(); }
+});
+dd.addEventListener("mousedown", e => {
+  const el = e.target.closest(".opt"); if (!el) return;
+  e.preventDefault(); choose(items[+el.dataset.i]);
+});
+dd.addEventListener("mousemove", e => {
+  const el = e.target.closest(".opt"); if (el && +el.dataset.i !== active) { active = +el.dataset.i; paintActive(); }
+});
+document.addEventListener("click", e => { if (!$("combo").contains(e.target)) closeDropdown(); });
+$("clear").addEventListener("click", () => {
+  input.value = ""; closeDropdown(); $("clear").classList.add("hidden"); input.focus();
+  history.replaceState(null, "", location.pathname); showHome();
+});
+
+// ---------- management style (SEC codes) ----------
+const STYLE = {
+  AM: ["Active",         "มุ่งหวังให้ผลประกอบการเคลื่อนไหวสูงกว่าดัชนีชี้วัด (active management)"],
+  AN: ["Active",         "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ผลประกอบการสูงกว่าดัชนีชี้วัด"],
+  PM: ["Passive",        "มุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด (passive management / index tracking)"],
+  PN: ["Passive",        "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด"],
+  IM: ["Inverse",        "มุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวตรงกันข้ามกับผลตอบแทนรายวันของดัชนีอ้างอิง (inverse management)"],
+  IN: ["Inverse",        "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวตรงกันข้ามกับผลตอบแทนรายวันของดัชนีอ้างอิง"],
+  LM: ["Leveraged",      "มุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวทวีคูณกับผลตอบแทนรายวันของดัชนีอ้างอิง (leveraged management)"],
+  LN: ["Leveraged",      "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวทวีคูณกับผลตอบแทนรายวันของดัชนีอ้างอิง"],
+  BH: ["Buy & Hold",     "มีกลยุทธ์การลงทุนครั้งเดียว (buy-and-hold)"],
+  SM: ["Enhanced Index", "มุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด และในบางโอกาสอาจสร้างผลตอบแทนสูงกว่าดัชนีชี้วัด"],
+  OT: ["อื่น ๆ",          "อื่น ๆ"]
+};
+function styleCell(v) {
+  const code = clean(v).toUpperCase();
+  if (!code) return "-";
+  const [label, full] = STYLE[code] || [code, ""];
+  const inner = `<span class="code">${esc(code)}</span>${label !== code ? esc(label) : ""}`;
+  return full ? `<span class="tip" tabindex="0" data-tip="${esc(code + " = " + full)}">${inner}</span>` : inner;
+}
+
+// ---------- tooltip: hover on desktop, tap on mobile ----------
+const tipbox = $("tipbox");
+let tipOwner = null;
+let tipShownAt = 0;
+function showTip(el) {
+  if (tipOwner !== el) tipShownAt = Date.now();
+  tipOwner = el;
+  tipbox.textContent = el.dataset.tip;
+  tipbox.classList.remove("hidden");
+  const r = el.getBoundingClientRect(), b = tipbox.getBoundingClientRect();
+  let left = Math.min(Math.max(8, r.left), window.innerWidth - b.width - 8);
+  let top = r.bottom + 8;
+  if (top + b.height > window.innerHeight - 8) top = r.top - b.height - 8;
+  tipbox.style.left = left + "px"; tipbox.style.top = top + "px";
+}
+function hideTip() { tipOwner = null; tipbox.classList.add("hidden"); }
+// hover only for a real mouse; touch screens use tap (click) below
+document.addEventListener("pointerover", e => { if (e.pointerType !== "mouse") return; const t = e.target.closest(".tip"); if (t) showTip(t); });
+document.addEventListener("pointerout",  e => { if (e.pointerType !== "mouse") return; if (e.target.closest(".tip") && !e.relatedTarget?.closest?.(".tip")) hideTip(); });
+document.addEventListener("focusin",   e => { const t = e.target.closest(".tip"); if (t) showTip(t); });
+document.addEventListener("focusout",  e => { if (e.target.closest(".tip")) hideTip(); });
+document.addEventListener("click", e => {
+  const t = e.target.closest(".tip");
+  if (!t) return hideTip();
+  // a tap fires mouseover/focus first, so only close if the tip was already open before this tap
+  if (tipOwner === t && !tipbox.classList.contains("hidden") && Date.now() - tipShownAt > 400) { t.blur(); hideTip(); }
+  else showTip(t);
+});
+window.addEventListener("scroll", hideTip, true);
+
+// ---------- FX hedging: short label, full text on hover ----------
+function fxShort(v) {
+  const s = clean(v); if (!s) return "-";
+  const t = s.toLowerCase();
+  if (t.includes("ไม่ป้องกัน") || t.includes("unhedged")) return "ไม่ป้องกัน";
+  if (t.includes("ทั้งหมด") || t.includes("fully")) return "ป้องกันทั้งหมด";
+  if (t.includes("ดุลยพินิจ") || t.includes("dynamic")) return "ดุลยพินิจ";
+  if (t.includes("บางส่วน") || t.includes("partial")) return "บางส่วน";
+  return s.split("(")[0].trim() || s;
+}
+
+// ---------- views ----------
+function choose(it) {
+  const m = it.type === "master" ? it.m : it.f.master;
+  const highlightAbbr = it.type === "fund" ? it.f.abbr : null;
+  input.value = m.name;
+  $("clear").classList.remove("hidden");
+  closeDropdown();
+  if (window.matchMedia("(pointer: coarse)").matches) input.blur();
+  const url = new URL(location); url.searchParams.set("master", m.name); history.replaceState(null, "", url);
+  showMaster(m, highlightAbbr);
+}
+
+function showHome() {
+  $("result").innerHTML = `<div class="card top">
+    <h2>10 อันดับ Master Fund ที่มีกองทุนไทยลงทุนมากที่สุด</h2>
+    <ul class="top-list">${MASTERS.slice(0, 10).map((m, i) =>
+      `<li><button data-i="${i}"><span>${esc(m.name)}<br><span class="small">${esc(m.amcs.join(", "))}</span></span><span class="count">${m.projects} กอง</span></button></li>`).join("")}
+    </ul></div>`;
+  $("result").querySelectorAll(".top-list button").forEach(b =>
+    b.addEventListener("click", () => choose({ type: "master", m: MASTERS[+b.dataset.i] })));
+}
+
+function showMaster(m, hitAbbr) {
+  const byProj = new Map();
+  for (const r of m.rows) {
+    const k = r.proj_id || r.proj_abbr_name;
+    if (!byProj.has(k)) byProj.set(k, { r, classes: [] });
+    byProj.get(k).classes.push(r);
+  }
+  const projects = [...byProj.values()].sort((a, b) =>
+    amcAbbr(a.r.comp_name_th).localeCompare(amcAbbr(b.r.comp_name_th)) || String(a.r.proj_abbr_name).localeCompare(String(b.r.proj_abbr_name)));
+
+  const rowsHtml = projects.map(({ r, classes }) => {
+    const classLines = classes.map(c => {
+      const tax = clean(c.fund_class_tax_incentive_type);
+      return `<div class="cls" title="${esc(clean(c.fund_class_description))}">${esc(clean(c.Search_Name) || clean(c.proj_abbr_name))}${tax ? ` <span class="tax">${esc(tax)}</span>` : ""}</div>`;
+    }).join("");
+    const fxFull = clean(r.exchange_rate_protection_policy);
+    const hit = hitAbbr && clean(r.proj_abbr_name) === hitAbbr ? ' class="hit"' : "";
+    return `<tr${hit}>
+      <td class="c-fund"><div class="abbr">${esc(r.proj_abbr_name)}</div><div class="small">${esc(r.proj_name_th)}</div></td>
+      <td class="c-amc" data-label="บลจ."><span class="amc" title="${esc(r.comp_name_th)}">${esc(amcAbbr(r.comp_name_th))}</span></td>
+      <td class="c-cls" data-label="Class">${classLines}</td>
+      <td class="c-st" data-label="กลยุทธ์ลงทุน">${styleCell(r.management_style)}</td>
+      <td class="c-fx" data-label="นโยบายค่าเงิน">${fxFull && fxShort(fxFull) !== fxFull
+        ? `<span class="tip" tabindex="0" data-tip="${esc(fxFull)}">${esc(fxShort(fxFull))}</span>` : esc(fxShort(fxFull))}</td>
+    </tr>`;
+  }).join("");
+
+  const variants = [...m.variants].filter(v => v !== m.name);
+  $("result").innerHTML = `<div class="card detail">
+    <h2>${esc(m.name)}</h2>
+    <div class="meta">${m.countries.size ? `กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))} · ` : ""}กองทุนไทย ${projects.length} กอง จาก ${m.amcs.length} บลจ.</div>
+    <div class="toolbar">
+      <button class="btn" id="csv">ดาวน์โหลด CSV</button>
+      <button class="btn" id="copy">คัดลอกชื่อกอง</button>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="c-fund">ชื่อกองทุน</th><th class="c-amc">บลจ.</th><th class="c-cls">Class</th><th class="c-st">กลยุทธ์ลงทุน</th><th class="c-fx">นโยบายค่าเงิน</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table></div>
+    ${variants.length ? `<div class="variants">ชื่อ master fund ตามที่แต่ละ บลจ. ระบุใน SEC:<ul>${variants.map(v => `<li>${esc(v)}</li>`).join("")}</ul></div>` : ""}
+  </div>`;
+
+  $("csv").addEventListener("click", () => downloadCsv(m));
+  $("copy").addEventListener("click", e => {
+    navigator.clipboard.writeText(projects.map(p => p.r.proj_abbr_name).join("\n")).then(() => {
+      e.target.textContent = "คัดลอกแล้ว"; setTimeout(() => e.target.textContent = "คัดลอกชื่อกอง", 1500);
+    });
+  });
+}
+
+function downloadCsv(m) {
+  const cols = ["Master_Fund_Search", "feederfund_master_fund", "proj_abbr_name", "Search_Name", "proj_name_th", "AMC", "comp_name_th",
+                "fund_class_tax_incentive_type", "management_style", "exchange_rate_protection_policy", "fund_class_isin_code"];
+  const q = v => `"${String(clean(v)).replace(/"/g, '""')}"`;
+  const lines = m.rows.map(r => cols.map(c => q(c === "AMC" ? amcAbbr(r.comp_name_th) : r[c])).join(","));
+  const blob = new Blob(["\uFEFF" + [cols.join(","), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `feeder_${m.name.replace(/[^\w]+/g, "_").slice(0, 60)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
