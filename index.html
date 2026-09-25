@@ -484,7 +484,7 @@ function showMaster(m, hitAbbr) {
   const variants = [...m.variants].filter(v => v !== m.name);
   $("result").innerHTML = `<div class="card detail">
     <h2>${esc(m.name)}</h2>
-    <div class="meta">${m.countries.size ? `กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))} · ` : ""}กองทุนไทย ${projects.length} กอง จาก ${m.amcs.length} บลจ.</div>
+    ${m.countries.size ? `<div class="meta">กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))}</div>` : `<div class="meta"></div>`}
     <div class="toolbar">
       <button class="btn" id="csv">ดาวน์โหลด CSV</button>
       <button class="btn" id="copy">คัดลอกชื่อกอง</button>
