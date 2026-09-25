@@ -70,6 +70,11 @@
   main.wrap { padding-top: 24px; padding-bottom: 60px; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
   .detail h2 { margin: 0; font-size: 22px; color: var(--ink); line-height: 1.35; }
+  .to-master { color: var(--lotus); font-weight: 500; }
+  a.ext { color: inherit; text-decoration: none; }
+  a.ext svg { margin-left: 8px; vertical-align: -2px; color: var(--lotus); }
+  a.ext:hover { color: var(--lotus); text-decoration: underline; text-underline-offset: 4px; }
+  a.ext:focus-visible { outline: 2px solid var(--lotus); outline-offset: 3px; border-radius: 4px; }
   .meta { color: var(--muted); margin: 6px 0 18px; font-size: 14px; }
   .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
   .btn {
@@ -166,7 +171,7 @@
     <div class="field">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="text" autocomplete="off" spellcheck="false"
-             placeholder="ระบุชื่อ Master Fund หรือชื่อย่อกองทุนไทย เช่น SPDR Gold Trust"
+             placeholder="ระบุชื่อ Master Fund ที่ต้องการ หรือค้นหาจากกองทุนในไทย"
              role="combobox" aria-expanded="false" aria-controls="dd" aria-autocomplete="list" aria-label="ค้นหา master fund หรือกองทุนไทย">
       <button class="clear hidden" id="clear" type="button" aria-label="ล้างคำค้น">✕</button>
     </div>
@@ -177,7 +182,7 @@
 <main class="wrap">
   <div id="upload" class="card upload hidden">
     <p>โหลดข้อมูลอัตโนมัติไม่ได้ (มักเกิดเมื่อเปิดไฟล์จากเครื่องโดยตรง)</p>
-    <p>เลือกไฟล์ <b>funds_data.json</b> (และ <b>amc_abbr.csv</b> ถ้ามี) พร้อมกันได้เลย</p>
+    <p>เลือกไฟล์ <b>funds_data.json</b> เพื่อเริ่มใช้งาน</p>
     <input type="file" id="file" accept=".json,.csv" multiple>
   </div>
   <section id="result" aria-live="polite"></section>
@@ -197,6 +202,11 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = s => String(s ?? "").toLowerCase().replace(/[–—]/g, "-").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const clean = v => { const s = String(v ?? "").trim(); return ["", "none", "nan", "null"].includes(s.toLowerCase()) ? "" : s; };
+// strip Thai/English label prefixes some AMCs type into the master fund field, e.g. "ชื่อกองทุนหลัก : iShares ..."
+const cleanMaster = v => clean(v)
+  .replace(/^\s*(ชื่อ\s*)?กองทุน\s*(หลัก)?\s*[:：]\s*/i, "")
+  .replace(/^\s*(name\s+of\s+)?master\s*fund\s*(name)?\s*[:：]\s*/i, "")
+  .trim();
 
 // ---------- AMC abbreviation ----------
 const amcKey = s => String(s ?? "")
@@ -204,15 +214,52 @@ const amcKey = s => String(s ?? "")
   .replace(/[\s()]/g, "").toLowerCase();
 const amcShortTh = s => String(s ?? "")
   .replace(/^บริษัท\s*หลักทรัพย์\s*จัดการกองทุน(รวม)?\s*/, "").replace(/\s*จำกัด.*$/, "").trim();
+// ชื่อย่อ บลจ. ฝังไว้ในไฟล์ ใช้ได้แม้เปิดแบบ offline
+// (ถ้ามี amc_abbr.csv อยู่ข้างไฟล์นี้ ค่าในไฟล์ CSV จะเพิ่ม/ทับรายการด้านล่าง)
+const AMC_BUILTIN = [
+  ["ABERDEEN", "บริษัทหลักทรัพย์จัดการกองทุน อเบอร์ดีน (ประเทศไทย) จำกัด"],
+  ["AIAM", "บริษัทหลักทรัพย์จัดการกองทุน ไอร่า จำกัด"],
+  ["ASSETFUND", "บริษัทหลักทรัพย์จัดการกองทุน แอสเซท พลัส จำกัด"],
+  ["BBLAM", "บริษัทหลักทรัพย์จัดการกองทุน บัวหลวง จำกัด"],
+  ["BCAP", "บริษัทหลักทรัพย์จัดการกองทุนรวม บางกอกแคปปิตอล จำกัด"],
+  ["DAOLINV", "บริษัทหลักทรัพย์จัดการกองทุน ดาโอ จำกัด"],
+  ["EASTSPRING", "บริษัทหลักทรัพย์จัดการกองทุน อีสท์สปริง (ประเทศไทย) จำกัด"],
+  ["KASSET", "บริษัทหลักทรัพย์จัดการกองทุน กสิกรไทย จำกัด"],
+  ["KKPAM", "บริษัทหลักทรัพย์จัดการกองทุน เกียรตินาคินภัทร จำกัด"],
+  ["KSAM", "บริษัทหลักทรัพย์จัดการกองทุน กรุงศรี จำกัด"],
+  ["KTAM", "บริษัทหลักทรัพย์จัดการกองทุน กรุงไทย จำกัด (มหาชน)"],
+  ["KWIAM", "บริษัทหลักทรัพย์จัดการกองทุน เคดับบลิวไอ จำกัด"],
+  ["LHFUND", "บริษัทหลักทรัพย์จัดการกองทุน แลนด์ แอนด์ เฮ้าส์ จำกัด"],
+  ["MFC", "บริษัทหลักทรัพย์จัดการกองทุน เอ็มเอฟซี จำกัด (มหาชน)"],
+  ["MPAM", "บริษัทหลักทรัพย์จัดการกองทุน เมอร์ชั่น พาร์ทเนอร์ จำกัด"],
+  ["ONEAM", "บริษัทหลักทรัพย์จัดการกองทุน วรรณ จำกัด"],
+  ["PAMC", "บริษัทหลักทรัพย์จัดการกองทุนรวม ฟิลลิป จำกัด"],
+  ["PRINCIPAL", "บริษัทหลักทรัพย์จัดการกองทุน พรินซิเพิล จำกัด"],
+  ["SAMC", "บริษัทหลักทรัพย์จัดการกองทุน ซาวาคามิ (ประเทศไทย) จำกัด"],
+  ["SCBAM", "บริษัทหลักทรัพย์จัดการกองทุน ไทยพาณิชย์ จำกัด"],
+  ["TALISAM", "บริษัทหลักทรัพย์จัดการกองทุน ทาลิส จำกัด"],
+  ["TISCOASSET", "บริษัทหลักทรัพย์จัดการกองทุน ทิสโก้ จำกัด"],
+  ["UOBAM", "บริษัทหลักทรัพย์จัดการกองทุน ยูโอบี (ประเทศไทย) จำกัด"],
+  ["WISE", "บริษัทหลักทรัพย์จัดการกองทุน ไวส์ จำกัด"],
+  ["XSpringAM", "บริษัทหลักทรัพย์จัดการกองทุน เอ็กซ์สปริง จำกัด"]
+];
+AMC_BUILTIN.forEach(([abbr, name]) => AMC.set(amcKey(name), abbr));
+
 function parseAmc(text) {
-  AMC = new Map();
   text.replace(/^\uFEFF/, "").split(/\r?\n/).slice(1).forEach(line => {
     const [abbr, ...rest] = line.split(",");
     const name = rest.join(",").replace(/^"|"$/g, "").trim();
     if (abbr && name) AMC.set(amcKey(name), abbr.trim());
   });
 }
-const amcAbbr = name => AMC.get(amcKey(name)) || amcShortTh(name);
+// fallback when an AMC isn't in the list: shorten its English name from SEC,
+// e.g. "FIRST PLUS ASSET MANAGEMENT (THAILAND) COMPANY LIMITED" -> "FIRSTPLUS"
+const AMC_EN = new Map();
+const amcShortEn = s => String(s ?? "").toUpperCase()
+  .replace(/\(.*?\)/g, " ")
+  .replace(/\b(PUBLIC|COMPANY|CO\.?|LIMITED|LTD\.?|ASSET|MANAGEMENT|FUND|MUTUAL|SECURITIES|INVESTMENT|THAILAND)\b/g, " ")
+  .replace(/[^A-Z0-9]+/g, "");   // no spaces, same style as the list (e.g. FIRSTPLUS)
+const amcAbbr = name => AMC.get(amcKey(name)) || amcShortEn(AMC_EN.get(amcKey(name))) || amcShortTh(name);
 
 // ---------- load ----------
 Promise.all([
@@ -231,9 +278,10 @@ $("file").addEventListener("change", async e => {
 });
 
 function init(rows) {
+  rows.forEach(r => { if (clean(r.comp_name_en)) AMC_EN.set(amcKey(r.comp_name_th), clean(r.comp_name_en)); });
   const map = new Map();
   for (const r of rows) {
-    const name = clean(r.Master_Fund_Search) || clean(r.feederfund_master_fund);
+    const name = cleanMaster(r.Master_Fund_Search) || cleanMaster(r.feederfund_master_fund);
     if (!name) continue;
     const key = norm(name);
     if (!map.has(key)) map.set(key, { key, name, rows: [], variants: new Set(), countries: new Set() });
@@ -321,7 +369,7 @@ function renderDropdown() {
       const f = it.f;
       html += `<li class="opt" role="option" id="opt${i}" data-i="${i}">
         <div class="t">${highlight(f.abbr, tokens)} <span class="small" style="font-weight:500">${esc(f.amc)}</span></div>
-        <div class="d">ลงทุนใน ${esc(f.master.name)}</div></li>`;
+        <div class="d">ลงทุนใน <span class="to-master">${esc(f.master.name)} ›</span></div></li>`;
     }
   });
   if (!list.length) html = `<li class="opt-empty">ไม่พบ “${esc(q)}” ลองพิมพ์ให้สั้นลง เช่น ชื่อบริษัทจัดการต่างประเทศ หรือคำหลักของกองทุน</li>`;
@@ -483,10 +531,10 @@ function showMaster(m, hitAbbr) {
 
   const variants = [...m.variants].filter(v => v !== m.name);
   $("result").innerHTML = `<div class="card detail">
-    <h2>${esc(m.name)}</h2>
+    <h2><a class="ext" href="https://www.google.com/search?q=${encodeURIComponent('"' + m.name + '" factsheet')}" target="_blank" rel="noopener"
+         title="ค้นหาข้อมูลกองทุนหลักใน Google (เปิดแท็บใหม่)">${esc(m.name)}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></h2>
     ${m.countries.size ? `<div class="meta">กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))}</div>` : `<div class="meta"></div>`}
     <div class="toolbar">
-      <button class="btn" id="csv">ดาวน์โหลด CSV</button>
       <button class="btn" id="copy">คัดลอกชื่อกอง</button>
     </div>
     <div class="table-scroll"><table>
@@ -496,7 +544,6 @@ function showMaster(m, hitAbbr) {
     ${variants.length ? `<div class="variants">ชื่อ master fund ตามที่แต่ละ บลจ. ระบุใน SEC:<ul>${variants.map(v => `<li>${esc(v)}</li>`).join("")}</ul></div>` : ""}
   </div>`;
 
-  $("csv").addEventListener("click", () => downloadCsv(m));
   $("copy").addEventListener("click", e => {
     navigator.clipboard.writeText(projects.map(p => p.r.proj_abbr_name).join("\n")).then(() => {
       e.target.textContent = "คัดลอกแล้ว"; setTimeout(() => e.target.textContent = "คัดลอกชื่อกอง", 1500);
