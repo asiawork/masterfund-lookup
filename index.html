@@ -25,8 +25,8 @@
     font-size: 15px; line-height: 1.6;
   }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-  header.wrap { padding-top: 40px; padding-bottom: 8px; }
-  h1 { margin: 0; font-size: 34px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; }
+  header { padding: 40px 0 8px; }
+  h1 { margin: 0; font-size: 26px; font-weight: 700; color: var(--ink); }
   .sub { margin: 2px 0 20px; color: var(--muted); }
 
   /* ---------- combobox ---------- */
@@ -63,11 +63,10 @@
   .opt-empty { padding: 14px 20px; color: var(--muted); }
   mark { background: var(--mark); color: inherit; border-radius: 2px; }
 
-  .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
-  .stats { color: var(--muted); font-size: 13px; padding-top: 6px; white-space: nowrap; }
+  .stats { margin-top: 12px; color: var(--muted); font-size: 13px; }
 
   /* ---------- result ---------- */
-  main.wrap { padding-top: 24px; padding-bottom: 60px; }
+  main { padding: 28px 0 60px; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
   .detail h2 { margin: 0; font-size: 22px; color: var(--ink); line-height: 1.35; }
   .meta { color: var(--muted); margin: 6px 0 18px; font-size: 14px; }
@@ -80,7 +79,7 @@
   .btn:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
 
   .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  table { width: 100%; border-collapse: collapse; min-width: 680px; }
   th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
   th { background: var(--wash); font-size: 13px; font-weight: 600; color: var(--muted); }
   tr:last-child td { border-bottom: 0; }
@@ -88,22 +87,8 @@
   .abbr { font-weight: 700; color: var(--ink); }
   .small { color: var(--muted); font-size: 13px; }
   .amc { font-weight: 600; }
-  table { table-layout: fixed; }
-  .c-fund { width: 30%; } .c-amc { width: 14%; } .c-cls { width: 22%; } .c-st { width: 16%; } .c-fx { width: 18%; }
-  td.c-fund .abbr, td.c-amc .amc { font-size: 16px; line-height: 1.5; }
-  .cls { font-size: 15px; line-height: 1.5; padding: 0; }
-  .cls + .cls { margin-top: 6px; }
-  .tax { font-size: 11.5px; color: var(--lotus); border: 1px solid #C9D7EE; border-radius: 4px; padding: 0 5px; margin-left: 4px; vertical-align: 1px; }
-  td.c-fx, td.c-st { font-size: 15px; }
-  .code { font-weight: 600; color: var(--ink); margin-right: 4px; }
-  /* hover / tap for full wording */
-  .tip { cursor: help; border-bottom: 1px dotted #9AA8BD; outline: none; }
-  .tip:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; border-radius: 2px; }
-  #tipbox {
-    position: fixed; z-index: 50; max-width: 300px; padding: 9px 12px; border-radius: 8px;
-    background: var(--ink); color: #fff; font-size: 13px; line-height: 1.55;
-    box-shadow: 0 8px 24px rgba(19,41,75,.25); pointer-events: none;
-  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12.5px; padding: 2px 8px; border-radius: 6px; background: var(--wash); border: 1px solid var(--line); white-space: nowrap; }
   .variants { margin-top: 18px; font-size: 13px; color: var(--muted); }
   .variants ul { margin: 6px 0 0; padding-left: 18px; }
 
@@ -124,13 +109,13 @@
   /* ---------- mobile ---------- */
   @media (max-width: 640px) {
     .wrap { padding: 0 14px; }
-    header.wrap { padding-top: 20px; padding-bottom: 4px; }
-    h1 { font-size: 26px; }
+    header { padding: 20px 0 4px; }
+    h1 { font-size: 22px; }
     .sub { font-size: 14px; margin-bottom: 14px; }
     .field input { font-size: 16px; padding: 14px 0; }   /* 16px+ stops iOS from zooming in */
     .opt { padding: 12px 16px; }
     .group-label { padding: 10px 16px 4px; }
-    main.wrap { padding-top: 16px; padding-bottom: 40px; }
+    main { padding: 18px 0 40px; }
     .card { padding: 16px; border-radius: 10px; }
     .detail h2 { font-size: 19px; }
     .toolbar .btn { flex: 1; padding: 10px 12px; }
@@ -145,10 +130,6 @@
     tr.hit td { background: none; }
     td { border: 0; padding: 6px 14px; }
     td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: var(--muted); }
-    table { table-layout: auto; }
-    .c-fund, .c-amc, .c-cls, .c-st, .c-fx { width: 100%; }
-    .head-row { flex-direction: column; gap: 2px; margin-bottom: 14px; }
-    .stats { padding-top: 0; }
     .top-list button { padding: 12px 2px; }
   }
   .hidden { display: none !important; }
@@ -157,21 +138,20 @@
 <body>
 
 <header class="wrap">
-  <div class="head-row">
-    <h1>Master Fund Search</h1>
-    <div class="stats" id="stats">กำลังโหลดข้อมูล…</div>
-  </div>
+  <h1>ค้นหากองทุนหลัก</h1>
+  <p class="sub">พิมพ์ชื่อ master fund หรือชื่อย่อกองทุนไทย แล้วเลือกจากรายการ</p>
 
   <div class="combo" id="combo">
     <div class="field">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="text" autocomplete="off" spellcheck="false"
-             placeholder="ระบุชื่อ Master Fund หรือชื่อย่อกองทุนไทย เช่น SPDR Gold Trust"
+             placeholder="เช่น Fidelity Global Technology หรือ K-GTECH"
              role="combobox" aria-expanded="false" aria-controls="dd" aria-autocomplete="list" aria-label="ค้นหา master fund หรือกองทุนไทย">
       <button class="clear hidden" id="clear" type="button" aria-label="ล้างคำค้น">✕</button>
     </div>
     <ul class="dropdown hidden" id="dd" role="listbox"></ul>
   </div>
+  <div class="stats" id="stats">กำลังโหลดข้อมูล…</div>
 </header>
 
 <main class="wrap">
@@ -182,8 +162,6 @@
   </div>
   <section id="result" aria-live="polite"></section>
 </main>
-
-<div id="tipbox" class="hidden" role="tooltip"></div>
 
 <script>
 const DATA_URL = "funds_data.json";
@@ -263,10 +241,8 @@ function init(rows) {
 
   const amcCount = new Set(rows.map(r => r.comp_name_th)).size;
   const lastUpd = rows.map(r => String(r.last_upd_date || "")).sort().pop() || "";
-  const d = lastUpd ? new Date(lastUpd.slice(0, 10)) : null;
-  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  $("stats").textContent = d && !isNaN(d) ? `ข้อมูล SEC ล่าสุด ${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}` : "";
-  $("stats").title = `Master fund ${MASTERS.length.toLocaleString()} กอง · กองทุนไทย ${FUNDS.length.toLocaleString()} กอง จาก ${amcCount} บลจ.`;
+  $("stats").textContent = `Master fund ${MASTERS.length.toLocaleString()} กอง · กองทุนไทย ${FUNDS.length.toLocaleString()} กอง จาก ${amcCount} บลจ.`
+    + (lastUpd ? ` · ข้อมูล SEC ล่าสุด ${lastUpd.slice(0, 10)}` : "");
 
   const p = new URLSearchParams(location.search).get("master");
   const m = p && MASTER_BY_KEY.get(norm(p));
@@ -370,69 +346,6 @@ $("clear").addEventListener("click", () => {
   history.replaceState(null, "", location.pathname); showHome();
 });
 
-// ---------- management style (SEC codes) ----------
-const STYLE = {
-  AM: ["Active",         "มุ่งหวังให้ผลประกอบการเคลื่อนไหวสูงกว่าดัชนีชี้วัด (active management)"],
-  AN: ["Active",         "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ผลประกอบการสูงกว่าดัชนีชี้วัด"],
-  PM: ["Passive",        "มุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด (passive management / index tracking)"],
-  PN: ["Passive",        "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด"],
-  IM: ["Inverse",        "มุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวตรงกันข้ามกับผลตอบแทนรายวันของดัชนีอ้างอิง (inverse management)"],
-  IN: ["Inverse",        "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวตรงกันข้ามกับผลตอบแทนรายวันของดัชนีอ้างอิง"],
-  LM: ["Leveraged",      "มุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวทวีคูณกับผลตอบแทนรายวันของดัชนีอ้างอิง (leveraged management)"],
-  LN: ["Leveraged",      "กองทุนไทยมุ่งหวังให้ผลประกอบการเคลื่อนไหวตามกองทุนหลัก ส่วนกองทุนหลักมุ่งหวังให้ได้รับผลประกอบการเคลื่อนไหวทวีคูณกับผลตอบแทนรายวันของดัชนีอ้างอิง"],
-  BH: ["Buy & Hold",     "มีกลยุทธ์การลงทุนครั้งเดียว (buy-and-hold)"],
-  SM: ["Enhanced Index", "มุ่งหวังให้ผลประกอบการเคลื่อนไหวตามดัชนีชี้วัด และในบางโอกาสอาจสร้างผลตอบแทนสูงกว่าดัชนีชี้วัด"],
-  OT: ["อื่น ๆ",          "อื่น ๆ"]
-};
-function styleCell(v) {
-  const code = clean(v).toUpperCase();
-  if (!code) return "-";
-  const [label, full] = STYLE[code] || [code, ""];
-  const inner = `<span class="code">${esc(code)}</span>${label !== code ? esc(label) : ""}`;
-  return full ? `<span class="tip" tabindex="0" data-tip="${esc(code + " = " + full)}">${inner}</span>` : inner;
-}
-
-// ---------- tooltip: hover on desktop, tap on mobile ----------
-const tipbox = $("tipbox");
-let tipOwner = null;
-let tipShownAt = 0;
-function showTip(el) {
-  if (tipOwner !== el) tipShownAt = Date.now();
-  tipOwner = el;
-  tipbox.textContent = el.dataset.tip;
-  tipbox.classList.remove("hidden");
-  const r = el.getBoundingClientRect(), b = tipbox.getBoundingClientRect();
-  let left = Math.min(Math.max(8, r.left), window.innerWidth - b.width - 8);
-  let top = r.bottom + 8;
-  if (top + b.height > window.innerHeight - 8) top = r.top - b.height - 8;
-  tipbox.style.left = left + "px"; tipbox.style.top = top + "px";
-}
-function hideTip() { tipOwner = null; tipbox.classList.add("hidden"); }
-// hover only for a real mouse; touch screens use tap (click) below
-document.addEventListener("pointerover", e => { if (e.pointerType !== "mouse") return; const t = e.target.closest(".tip"); if (t) showTip(t); });
-document.addEventListener("pointerout",  e => { if (e.pointerType !== "mouse") return; if (e.target.closest(".tip") && !e.relatedTarget?.closest?.(".tip")) hideTip(); });
-document.addEventListener("focusin",   e => { const t = e.target.closest(".tip"); if (t) showTip(t); });
-document.addEventListener("focusout",  e => { if (e.target.closest(".tip")) hideTip(); });
-document.addEventListener("click", e => {
-  const t = e.target.closest(".tip");
-  if (!t) return hideTip();
-  // a tap fires mouseover/focus first, so only close if the tip was already open before this tap
-  if (tipOwner === t && !tipbox.classList.contains("hidden") && Date.now() - tipShownAt > 400) { t.blur(); hideTip(); }
-  else showTip(t);
-});
-window.addEventListener("scroll", hideTip, true);
-
-// ---------- FX hedging: short label, full text on hover ----------
-function fxShort(v) {
-  const s = clean(v); if (!s) return "-";
-  const t = s.toLowerCase();
-  if (t.includes("ไม่ป้องกัน") || t.includes("unhedged")) return "ไม่ป้องกัน";
-  if (t.includes("ทั้งหมด") || t.includes("fully")) return "ป้องกันทั้งหมด";
-  if (t.includes("ดุลยพินิจ") || t.includes("dynamic")) return "ดุลยพินิจ";
-  if (t.includes("บางส่วน") || t.includes("partial")) return "บางส่วน";
-  return s.split("(")[0].trim() || s;
-}
-
 // ---------- views ----------
 function choose(it) {
   const m = it.type === "master" ? it.m : it.f.master;
@@ -447,7 +360,7 @@ function choose(it) {
 
 function showHome() {
   $("result").innerHTML = `<div class="card top">
-    <h2>10 อันดับ Master Fund ที่มีกองทุนไทยลงทุนมากที่สุด</h2>
+    <h2>Master fund ที่มีกองทุนไทยลงทุนมากที่สุด</h2>
     <ul class="top-list">${MASTERS.slice(0, 10).map((m, i) =>
       `<li><button data-i="${i}"><span>${esc(m.name)}<br><span class="small">${esc(m.amcs.join(", "))}</span></span><span class="count">${m.projects} กอง</span></button></li>`).join("")}
     </ul></div>`;
@@ -466,32 +379,29 @@ function showMaster(m, hitAbbr) {
     amcAbbr(a.r.comp_name_th).localeCompare(amcAbbr(b.r.comp_name_th)) || String(a.r.proj_abbr_name).localeCompare(String(b.r.proj_abbr_name)));
 
   const rowsHtml = projects.map(({ r, classes }) => {
-    const classLines = classes.map(c => {
+    const chips = classes.map(c => {
       const tax = clean(c.fund_class_tax_incentive_type);
-      return `<div class="cls" title="${esc(clean(c.fund_class_description))}">${esc(clean(c.Search_Name) || clean(c.proj_abbr_name))}${tax ? ` <span class="tax">${esc(tax)}</span>` : ""}</div>`;
+      return `<span class="chip" title="${esc(clean(c.fund_class_description))}">${esc(clean(c.Search_Name) || clean(c.proj_abbr_name))}${tax ? ` · ${esc(tax)}` : ""}</span>`;
     }).join("");
-    const fxFull = clean(r.exchange_rate_protection_policy);
     const hit = hitAbbr && clean(r.proj_abbr_name) === hitAbbr ? ' class="hit"' : "";
     return `<tr${hit}>
-      <td class="c-fund"><div class="abbr">${esc(r.proj_abbr_name)}</div><div class="small">${esc(r.proj_name_th)}</div></td>
-      <td class="c-amc" data-label="บลจ."><span class="amc" title="${esc(r.comp_name_th)}">${esc(amcAbbr(r.comp_name_th))}</span></td>
-      <td class="c-cls" data-label="Class">${classLines}</td>
-      <td class="c-st" data-label="กลยุทธ์ลงทุน">${styleCell(r.management_style)}</td>
-      <td class="c-fx" data-label="นโยบายค่าเงิน">${fxFull && fxShort(fxFull) !== fxFull
-        ? `<span class="tip" tabindex="0" data-tip="${esc(fxFull)}">${esc(fxShort(fxFull))}</span>` : esc(fxShort(fxFull))}</td>
+      <td><div class="abbr">${esc(r.proj_abbr_name)}</div><div class="small">${esc(r.proj_name_th)}</div></td>
+      <td data-label="บลจ."><div class="amc">${esc(amcAbbr(r.comp_name_th))}</div><div class="small">${esc(amcShortTh(r.comp_name_th))}</div></td>
+      <td data-label="Class"><div class="chips">${chips}</div></td>
+      <td data-label="ป้องกันความเสี่ยงค่าเงิน">${esc(clean(r.exchange_rate_protection_policy) || "-")}</td>
     </tr>`;
   }).join("");
 
   const variants = [...m.variants].filter(v => v !== m.name);
   $("result").innerHTML = `<div class="card detail">
     <h2>${esc(m.name)}</h2>
-    <div class="meta">${m.countries.size ? `กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))} · ` : ""}กองทุนไทย ${projects.length} กอง จาก ${m.amcs.length} บลจ.</div>
+    <div class="meta">กองทุนไทย ${projects.length} กอง จาก ${m.amcs.length} บลจ.${m.countries.size ? ` · กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))}` : ""}</div>
     <div class="toolbar">
       <button class="btn" id="csv">ดาวน์โหลด CSV</button>
       <button class="btn" id="copy">คัดลอกชื่อกอง</button>
     </div>
     <div class="table-scroll"><table>
-      <thead><tr><th class="c-fund">ชื่อกองทุน</th><th class="c-amc">บลจ.</th><th class="c-cls">Class</th><th class="c-st">กลยุทธ์ลงทุน</th><th class="c-fx">นโยบายค่าเงิน</th></tr></thead>
+      <thead><tr><th>กองทุนไทย</th><th>บลจ.</th><th>Class</th><th>ป้องกันความเสี่ยงค่าเงิน</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table></div>
     ${variants.length ? `<div class="variants">ชื่อ master fund ตามที่แต่ละ บลจ. ระบุใน SEC:<ul>${variants.map(v => `<li>${esc(v)}</li>`).join("")}</ul></div>` : ""}
@@ -507,7 +417,7 @@ function showMaster(m, hitAbbr) {
 
 function downloadCsv(m) {
   const cols = ["Master_Fund_Search", "feederfund_master_fund", "proj_abbr_name", "Search_Name", "proj_name_th", "AMC", "comp_name_th",
-                "fund_class_tax_incentive_type", "management_style", "exchange_rate_protection_policy", "fund_class_isin_code"];
+                "fund_class_tax_incentive_type", "exchange_rate_protection_policy", "fund_class_isin_code"];
   const q = v => `"${String(clean(v)).replace(/"/g, '""')}"`;
   const lines = m.rows.map(r => cols.map(c => q(c === "AMC" ? amcAbbr(r.comp_name_th) : r[c])).join(","));
   const blob = new Blob(["\uFEFF" + [cols.join(","), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
