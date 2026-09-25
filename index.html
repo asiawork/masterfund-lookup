@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Master Fund Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #13294B;
+    --text: #1C2738;
+    --muted: #5B6B82;
+    --line: #D9E1EC;
+    --lotus: #2A5CAA;
+    --wash: #F3F6FB;
+    --mark: #FFE9A8;
+    --bg: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
+    font-size: 15px; line-height: 1.6;
+  }
+  header { background: var(--ink); color: #fff; padding: 36px 24px 44px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 22px; color: #B9C7DD; }
+  .search { position: relative; }
+  .search input {
+    width: 100%; padding: 16px 18px; font: inherit; font-size: 18px;
+    border: 2px solid transparent; border-radius: 10px; color: var(--text);
+  }
+  .search input:focus { outline: none; border-color: #8FB0E3; }
+  .stats { margin-top: 14px; color: #B9C7DD; font-size: 13px; }
+  .stats b { color: #fff; font-weight: 600; }
+
+  main.wrap { display: grid; grid-template-columns: 340px 1fr; gap: 28px; padding: 28px 24px 60px; }
+  @media (max-width: 820px) { main.wrap { grid-template-columns: 1fr; } }
+
+  .list-head { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .master-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .master-list button {
+    display: flex; justify-content: space-between; gap: 12px; width: 100%;
+    text-align: left; font: inherit; color: var(--text); background: none;
+    border: 0; border-bottom: 1px solid var(--line); padding: 11px 10px; cursor: pointer;
+  }
+  .master-list button:hover { background: var(--wash); }
+  .master-list button[aria-selected="true"] { background: var(--wash); box-shadow: inset 3px 0 0 var(--lotus); }
+  .master-list button:focus-visible { outline: 2px solid var(--lotus); outline-offset: -2px; }
+  .count { flex: none; min-width: 28px; text-align: center; font-weight: 600; color: var(--lotus); }
+  mark { background: var(--mark); color: inherit; border-radius: 2px; }
+
+  .detail h2 { margin: 0; font-size: 22px; color: var(--ink); line-height: 1.35; }
+  .detail .meta { color: var(--muted); margin: 6px 0 18px; font-size: 14px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .btn {
+    font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--lotus); background: #fff; color: var(--lotus);
+  }
+  .btn:hover { background: var(--wash); }
+  .btn:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { background: var(--wash); font-size: 13px; font-weight: 600; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  .abbr { font-weight: 700; color: var(--ink); }
+  .thname { color: var(--muted); font-size: 13px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12.5px; padding: 2px 8px; border-radius: 6px; background: var(--wash); border: 1px solid var(--line); white-space: nowrap; }
+  .variants { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  .variants ul { margin: 6px 0 0; padding-left: 18px; }
+
+  .empty { color: var(--muted); padding: 24px 0; }
+  .loader { padding: 40px 24px; text-align: center; color: var(--muted); }
+  .upload { max-width: 520px; margin: 40px auto; padding: 24px; border: 1px dashed var(--line); border-radius: 10px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>ค้นหากองทุนหลัก</h1>
+    <p class="sub">พิมพ์ชื่อ master fund เพื่อดูว่ากองทุนไทยกองไหนลงทุนอยู่</p>
+    <div class="search">
+      <input id="q" type="search" autocomplete="off" placeholder="เช่น Fidelity Global Technology, Nikko, PIMCO Income" aria-label="ค้นหา master fund">
+    </div>
+    <div class="stats" id="stats">กำลังโหลดข้อมูล…</div>
+  </div>
+</header>
+
+<div id="loader" class="loader">กำลังโหลด funds_data.json…</div>
+
+<div id="upload" class="upload hidden">
+  <p>โหลด funds_data.json อัตโนมัติไม่ได้ (มักเกิดเมื่อเปิดไฟล์จากเครื่องโดยตรง)</p>
+  <p>เลือกไฟล์ funds_data.json เพื่อเริ่มใช้งาน</p>
+  <input type="file" id="file" accept=".json,application/json">
+</div>
+
+<main class="wrap hidden" id="app">
+  <section>
+    <div class="list-head" id="listHead"></div>
+    <ul class="master-list" id="masters" role="listbox" aria-label="ผลการค้นหา master fund"></ul>
+  </section>
+  <section class="detail" id="detail" aria-live="polite"></section>
+</main>
+
+<script>
+const DATA_URL = "funds_data.json";
+const MAX_LIST = 60;
+
+let MASTERS = [];      // [{key, name, rows, variants:Set, countries:Set}]
+let current = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s ?? "").toLowerCase().replace(/[–—]/g, "-").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const clean = v => { const s = String(v ?? "").trim(); return ["", "none", "nan", "null"].includes(s.toLowerCase()) ? "" : s; };
+
+// ---------- load ----------
+fetch(DATA_URL, { cache: "no-cache" })
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(init)
+  .catch(() => { $("loader").classList.add("hidden"); $("upload").classList.remove("hidden"); $("stats").textContent = ""; });
+
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { $("upload").classList.add("hidden"); init(JSON.parse(t)); });
+});
+
+function init(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    const name = clean(r.Master_Fund_Search) || clean(r.feederfund_master_fund);
+    if (!name) continue;
+    const key = norm(name);
+    if (!map.has(key)) map.set(key, { key, name, rows: [], variants: new Set(), countries: new Set() });
+    const m = map.get(key);
+    m.rows.push(r);
+    if (clean(r.feederfund_master_fund)) m.variants.add(clean(r.feederfund_master_fund));
+    if (clean(r.feederfund_country)) m.countries.add(clean(r.feederfund_country));
+  }
+  MASTERS = [...map.values()].map(m => ({ ...m, projects: new Set(m.rows.map(r => r.proj_id || r.proj_abbr_name)).size }));
+  MASTERS.sort((a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
+
+  const projCount = new Set(rows.map(r => r.proj_id || r.proj_abbr_name)).size;
+  const amcCount = new Set(rows.map(r => r.comp_name_th)).size;
+  const lastUpd = rows.map(r => String(r.last_upd_date || "")).sort().pop() || "";
+  $("stats").innerHTML = `Master fund <b>${MASTERS.length.toLocaleString()}</b> กอง · กองทุนไทย <b>${projCount.toLocaleString()}</b> กอง จาก <b>${amcCount}</b> บลจ.`
+    + (lastUpd ? ` · อัปเดตล่าสุดใน SEC ${esc(lastUpd.slice(0, 10))}` : "");
+
+  $("loader").classList.add("hidden");
+  $("app").classList.remove("hidden");
+
+  const q = new URLSearchParams(location.search).get("q") || "";
+  $("q").value = q;
+  search(q);
+  $("q").focus();
+}
+
+// ---------- search ----------
+let timer;
+$("q").addEventListener("input", e => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const q = e.target.value;
+    const url = new URL(location); q ? url.searchParams.set("q", q) : url.searchParams.delete("q");
+    history.replaceState(null, "", url);
+    search(q);
+  }, 150);
+});
+
+function search(q) {
+  const tokens = norm(q).split(" ").filter(Boolean);
+  let hits = MASTERS;
+  if (tokens.length) {
+    hits = MASTERS.filter(m => tokens.every(t => m.key.includes(t)));
+    const first = norm(q);
+    hits = [...hits].sort((a, b) => (b.key.startsWith(first) - a.key.startsWith(first)) || b.projects - a.projects);
+  }
+  renderList(hits, tokens);
+  if (hits.length) select(hits[0], tokens);
+  else $("detail").innerHTML = `<p class="empty">ไม่พบ master fund ที่ตรงกับ “${esc(q)}” ลองพิมพ์คำให้สั้นลง เช่น ชื่อบริษัทจัดการ หรือคำหลักของกองทุน</p>`;
+}
+
+function highlight(text, tokens) {
+  let out = esc(text);
+  for (const t of tokens) {
+    if (t.length < 2) continue;
+    const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    out = out.replace(re, "<mark>$1</mark>");
+  }
+  return out;
+}
+
+function renderList(hits, tokens) {
+  $("listHead").textContent = tokens.length
+    ? `พบ ${hits.length.toLocaleString()} master fund${hits.length > MAX_LIST ? ` (แสดง ${MAX_LIST} อันดับแรก)` : ""}`
+    : `master fund ที่มีกองทุนไทยลงทุนมากที่สุด`;
+  const ul = $("masters");
+  ul.innerHTML = "";
+  hits.slice(0, MAX_LIST).forEach(m => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.setAttribute("role", "option");
+    b.innerHTML = `<span>${highlight(m.name, tokens)}</span><span class="count" title="จำนวนกองทุนไทย">${m.projects}</span>`;
+    b.addEventListener("click", () => select(m, tokens));
+    b._m = m;
+    li.appendChild(b); ul.appendChild(li);
+  });
+}
+
+// ---------- detail ----------
+function select(m, tokens) {
+  current = m;
+  document.querySelectorAll("#masters button").forEach(b => b.setAttribute("aria-selected", b._m === m));
+
+  // group share classes by project
+  const byProj = new Map();
+  for (const r of m.rows) {
+    const k = r.proj_id || r.proj_abbr_name;
+    if (!byProj.has(k)) byProj.set(k, { r, classes: [] });
+    byProj.get(k).classes.push(r);
+  }
+  const projects = [...byProj.values()].sort((a, b) =>
+    String(a.r.comp_name_th).localeCompare(String(b.r.comp_name_th), "th") || String(a.r.proj_abbr_name).localeCompare(String(b.r.proj_abbr_name)));
+
+  const rowsHtml = projects.map(({ r, classes }) => {
+    const chips = classes.map(c => {
+      const tax = clean(c.fund_class_tax_incentive_type);
+      return `<span class="chip" title="${esc(clean(c.fund_class_description))}">${esc(clean(c.Search_Name) || clean(c.proj_abbr_name))}${tax ? ` · ${esc(tax)}` : ""}</span>`;
+    }).join("");
+    return `<tr>
+      <td><div class="abbr">${esc(r.proj_abbr_name)}</div><div class="thname">${esc(r.proj_name_th)}</div></td>
+      <td>${esc(r.comp_name_th)}</td>
+      <td><div class="chips">${chips}</div></td>
+      <td>${esc(clean(r.exchange_rate_protection_policy) || "-")}</td>
+    </tr>`;
+  }).join("");
+
+  const variants = [...m.variants].filter(v => v !== m.name);
+  $("detail").innerHTML = `
+    <h2>${highlight(m.name, tokens)}</h2>
+    <div class="meta">กองทุนไทย ${projects.length} กอง · ${m.rows.length} class${m.countries.size ? ` · ประเทศ ${esc([...m.countries].join(", "))}` : ""}</div>
+    <div class="toolbar">
+      <button class="btn" id="csv">ดาวน์โหลด CSV</button>
+      <button class="btn" id="copy">คัดลอกชื่อกองทุนไทย</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>กองทุนไทย</th><th>บลจ.</th><th>Class</th><th>ป้องกันความเสี่ยงค่าเงิน</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    ${variants.length ? `<div class="variants">ชื่อ master fund ตามที่แต่ละ บลจ. ระบุใน SEC:<ul>${variants.map(v => `<li>${esc(v)}</li>`).join("")}</ul></div>` : ""}
+  `;
+  $("csv").addEventListener("click", () => downloadCsv(m));
+  $("copy").addEventListener("click", e => {
+    const names = projects.map(p => p.r.proj_abbr_name).join("\n");
+    navigator.clipboard.writeText(names).then(() => { e.target.textContent = "คัดลอกแล้ว"; setTimeout(() => e.target.textContent = "คัดลอกชื่อกองทุนไทย", 1500); });
+  });
+}
+
+function downloadCsv(m) {
+  const cols = ["Master_Fund_Search", "feederfund_master_fund", "proj_abbr_name", "Search_Name", "proj_name_th", "comp_name_th",
+                "fund_class_tax_incentive_type", "exchange_rate_protection_policy", "fund_class_isin_code"];
+  const q = v => `"${String(clean(v)).replace(/"/g, '""')}"`;
+  const csv = "\uFEFF" + [cols.join(","), ...m.rows.map(r => cols.map(c => q(r[c])).join(","))].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = `feeder_${m.name.replace(/[^\w]+/g, "_").slice(0, 60)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
