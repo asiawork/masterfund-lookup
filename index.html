@@ -127,6 +127,32 @@
   .top-list button:focus-visible { outline: 2px solid var(--lotus); outline-offset: -2px; }
   .count { flex: none; color: var(--lotus); font-weight: 600; }
 
+  .top-list .nm { min-width: 0; }
+  .top-list .mn { display: block; }
+  .top-list .nm .small { display: block; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-list .count { font-size: 14px; padding-top: 1px; }
+
+  /* A–Z jump bar + letter sections */
+  .az-bar {
+    position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 2px;
+    background: #fff; padding: 8px 0; margin: 0 0 4px; border-bottom: 1px solid var(--line);
+  }
+  .az-bar button, .az-bar span {
+    min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .az-bar button { border: 0; background: none; color: var(--lotus); cursor: pointer; }
+  .az-bar button:hover { background: var(--wash); }
+  .az-bar button:focus-visible { outline: 2px solid var(--lotus); outline-offset: 1px; }
+  .az-bar span { color: #C3CBD8; }
+  section.letter { scroll-margin-top: 56px; }
+  section.letter h3 {
+    display: flex; align-items: baseline; gap: 10px; margin: 18px 0 2px; padding: 0 4px 6px;
+    font-size: 22px; color: var(--ink); border-bottom: 2px solid var(--ink);
+  }
+  section.letter h3 .gn { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .note { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+
   .upload { text-align: center; }
 
   /* ---------- mobile ---------- */
@@ -158,6 +184,9 @@
     .head-row { flex-direction: column; gap: 2px; margin-bottom: 14px; }
     .stats { padding-top: 0; }
     .top-list button { padding: 12px 2px; }
+    .az-bar { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 4px; padding: 8px 12px; -webkit-overflow-scrolling: touch; }
+    .az-bar button, .az-bar span { flex: none; min-width: 34px; height: 34px; }
+    section.letter { scroll-margin-top: 60px; }
   }
   .hidden { display: none !important; }
 </style>
@@ -419,13 +448,13 @@ dd.addEventListener("mousemove", e => {
 document.addEventListener("click", e => { if (!$("combo").contains(e.target)) closeDropdown(); });
 $("clear").addEventListener("click", () => {
   input.value = ""; closeDropdown(); $("clear").classList.add("hidden"); input.focus();
-  history.replaceState(null, "", location.pathname); showHome();
+  showHome();   // back to the list, filters kept
 });
 $("home").addEventListener("click", e => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0 || !MASTERS.length) return; // new tab / data not loaded → normal link
   e.preventDefault();
   input.value = ""; closeDropdown(); $("clear").classList.add("hidden");
-  history.replaceState(null, "", location.pathname); showHome();
+  showHome();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
@@ -504,15 +533,45 @@ function choose(it) {
   showMaster(m, highlightAbbr);
 }
 
+// ---------- home: every master fund, grouped A–Z ----------
+const LETTERS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0–9", "#"];
+// first letter of the name, ignoring leading symbols and accents (É → E)
+const letterOf = name => {
+  const c = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/^[^\p{L}\p{N}]+/u, "").charAt(0).toUpperCase();
+  return /[A-Z]/.test(c) ? c : /[0-9]/.test(c) ? "0–9" : "#";
+};
+
 function showHome() {
-  $("result").innerHTML = `<div class="card top">
-    <h2>10 อันดับ Master Fund ที่มีกองทุนไทยลงทุนมากที่สุด</h2>
-    <ul class="top-list">${MASTERS.slice(0, 10).map((m, i) =>
-      `<li><button data-i="${i}"><span>${esc(m.name)}</span></button></li>`).join("")}
-    </ul></div>`;
-  $("result").querySelectorAll(".top-list button").forEach(b =>
-    b.addEventListener("click", () => choose({ type: "master", m: MASTERS[+b.dataset.i] })));
+  history.replaceState(null, "", location.pathname);
+  const groups = new Map();
+  [...MASTERS].sort((a, b) => a.name.localeCompare(b.name)).forEach(m => {
+    const L = letterOf(m.name);
+    if (!groups.has(L)) groups.set(L, []);
+    groups.get(L).push(m);
+  });
+  const row = m => `<li><button data-k="${esc(m.key)}">
+      <span class="nm"><span class="mn">${esc(m.name)}</span>
+      <span class="small">${esc(m.amcs.join(", "))}</span></span>
+      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`;
+
+  $("result").innerHTML = `<div class="card top home">
+    <h2>Master Fund ทั้งหมด <span class="small" style="font-weight:500">${MASTERS.length.toLocaleString()} กอง</span></h2>
+    <nav class="az-bar" aria-label="ไปที่ตัวอักษร">${LETTERS.map(L => groups.has(L)
+      ? `<button type="button" data-jump="${L}" title="${groups.get(L).length} master fund">${L}</button>`
+      : `<span aria-hidden="true">${L}</span>`).join("")}</nav>
+    ${LETTERS.filter(L => groups.has(L)).map(L => `<section class="letter" id="L-${L}">
+      <h3>${L}<span class="gn">${groups.get(L).length.toLocaleString()} master fund</span></h3>
+      <ul class="top-list">${groups.get(L).map(row).join("")}</ul></section>`).join("")}
+  </div>`;
 }
+
+// one listener for the home view (the view is re-rendered, the container stays)
+$("result").addEventListener("click", e => {
+  const b = e.target.closest("[data-k]");
+  if (b) { const m = MASTER_BY_KEY.get(b.dataset.k); if (m) choose({ type: "master", m }); return; }
+  const j = e.target.closest("[data-jump]");
+  if (j) $("L-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 function showMaster(m, hitAbbr) {
   const byProj = new Map();
