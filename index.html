@@ -143,14 +143,11 @@
   }
   .az-bar button { border: 0; background: none; color: var(--lotus); cursor: pointer; }
   .az-bar button:hover { background: var(--wash); }
+  .az-bar button[aria-pressed="true"] { background: var(--lotus); color: #fff; }
+  .az-bar button[data-letter=""] { padding: 0 10px; font-weight: 500; }
+  .home-count { font-size: 13.5px; color: var(--muted); margin: 8px 4px 4px; }
   .az-bar button:focus-visible { outline: 2px solid var(--lotus); outline-offset: 1px; }
   .az-bar span { color: #C3CBD8; }
-  section.letter { scroll-margin-top: 56px; }
-  section.letter h3 {
-    display: flex; align-items: baseline; gap: 10px; margin: 18px 0 2px; padding: 0 4px 6px;
-    font-size: 22px; color: var(--ink); border-bottom: 2px solid var(--ink);
-  }
-  section.letter h3 .gn { font-size: 13px; font-weight: 500; color: var(--muted); }
   .note { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
 
   .upload { text-align: center; }
@@ -186,7 +183,6 @@
     .top-list button { padding: 12px 2px; }
     .az-bar { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 4px; padding: 8px 12px; -webkit-overflow-scrolling: touch; }
     .az-bar button, .az-bar span { flex: none; min-width: 34px; height: 34px; }
-    section.letter { scroll-margin-top: 60px; }
   }
   .hidden { display: none !important; }
 </style>
@@ -541,36 +537,53 @@ const letterOf = name => {
   return /[A-Z]/.test(c) ? c : /[0-9]/.test(c) ? "0–9" : "#";
 };
 
-function showHome() {
-  history.replaceState(null, "", location.pathname);
-  const groups = new Map();
-  [...MASTERS].sort((a, b) => a.name.localeCompare(b.name)).forEach(m => {
-    const L = letterOf(m.name);
-    if (!groups.has(L)) groups.set(L, []);
-    groups.get(L).push(m);
-  });
-  const row = m => `<li><button data-k="${esc(m.key)}">
-      <span class="nm"><span class="mn">${esc(m.name)}</span>
-      <span class="small">${esc(m.amcs.join(", "))}</span></span>
-      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`;
+let homeLetter = "";   // "" = all
 
+function showHome() {
+  const p = new URLSearchParams(location.search).get("l");
+  if (p && LETTERS.includes(p)) homeLetter = p;
   $("result").innerHTML = `<div class="card top home">
-    <h2>Master Fund ทั้งหมด <span class="small" style="font-weight:500">${MASTERS.length.toLocaleString()} กอง</span></h2>
-    <nav class="az-bar" aria-label="ไปที่ตัวอักษร">${LETTERS.map(L => groups.has(L)
-      ? `<button type="button" data-jump="${L}" title="${groups.get(L).length} master fund">${L}</button>`
-      : `<span aria-hidden="true">${L}</span>`).join("")}</nav>
-    ${LETTERS.filter(L => groups.has(L)).map(L => `<section class="letter" id="L-${L}">
-      <h3>${L}<span class="gn">${groups.get(L).length.toLocaleString()} master fund</span></h3>
-      <ul class="top-list">${groups.get(L).map(row).join("")}</ul></section>`).join("")}
+    <h2>Master Fund ทั้งหมด</h2>
+    <nav class="az-bar" id="azBar" aria-label="กรองตามตัวอักษรแรก"></nav>
+    <div class="home-count" id="homeCount"></div>
+    <ul class="top-list" id="homeList"></ul>
   </div>`;
+  renderHome();
 }
 
-// one listener for the home view (the view is re-rendered, the container stays)
+function renderHome() {
+  const url = new URL(location); url.search = homeLetter ? "?l=" + encodeURIComponent(homeLetter) : "";
+  history.replaceState(null, "", url);
+
+  const all = [...MASTERS].sort((a, b) => a.name.localeCompare(b.name));
+  const count = new Map();
+  all.forEach(m => { const L = letterOf(m.name); count.set(L, (count.get(L) || 0) + 1); });
+  const btn = (L, label, n) => `<button type="button" data-letter="${L}" aria-pressed="${homeLetter === L}"
+      title="${n.toLocaleString()} master fund">${label}</button>`;
+  $("azBar").innerHTML = btn("", "ทั้งหมด", all.length) + LETTERS.map(L => count.has(L)
+      ? btn(L, L, count.get(L)) : `<span aria-hidden="true">${L}</span>`).join("");
+
+  const list = homeLetter ? all.filter(m => letterOf(m.name) === homeLetter) : all;
+  $("homeCount").textContent = homeLetter
+    ? `ขึ้นต้นด้วย ${homeLetter === "#" ? "ตัวอักษรอื่น" : homeLetter} · ${list.length.toLocaleString()} กอง`
+    : `${list.length.toLocaleString()} กอง เรียงตามชื่อ`;
+  $("homeList").innerHTML = list.map(m => `<li><button data-k="${esc(m.key)}">
+      <span class="nm"><span class="mn">${esc(m.name)}</span>
+      <span class="small">${esc(m.amcs.join(", "))}</span></span>
+      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("");
+}
+
 $("result").addEventListener("click", e => {
   const b = e.target.closest("[data-k]");
   if (b) { const m = MASTER_BY_KEY.get(b.dataset.k); if (m) choose({ type: "master", m }); return; }
-  const j = e.target.closest("[data-jump]");
-  if (j) $("L-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const l = e.target.closest("[data-letter]");
+  if (l) {
+    homeLetter = l.dataset.letter;
+    renderHome();
+    // if the list was scrolled, bring its top back into view
+    const card = document.querySelector(".home");
+    if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: "start" });
+  }
 });
 
 function showMaster(m, hitAbbr) {
