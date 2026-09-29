@@ -146,6 +146,20 @@
   .az-bar button[aria-pressed="true"] { background: var(--lotus); color: #fff; }
   .az-bar button[data-letter=""] { padding: 0 10px; font-weight: 500; }
   .home-count { font-size: 13.5px; color: var(--muted); margin: 8px 4px 4px; }
+  .style-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 2px 0 6px; }
+  .style-lbl { font-size: 13.5px; color: var(--muted); }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    font: inherit; font-size: 14px; font-weight: 500; padding: 6px 12px; border: 0; border-left: 1px solid var(--line);
+    background: #fff; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .seg button:first-child { border-left: 0; }
+  .seg button .n { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .seg button:hover:not(:disabled) { background: var(--wash); }
+  .seg button[aria-pressed="true"] { background: var(--lotus); color: #fff; }
+  .seg button[aria-pressed="true"] .n { color: rgba(255,255,255,.8); }
+  .seg button:disabled { color: #C3CBD8; cursor: default; }
+  .seg button:focus-visible { outline: 2px solid var(--lotus); outline-offset: -2px; }
   .az-bar button:focus-visible { outline: 2px solid var(--lotus); outline-offset: 1px; }
   .az-bar span { color: #C3CBD8; }
   .note { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
@@ -322,7 +336,9 @@ function init(rows) {
     const projs = new Map();
     m.rows.forEach(r => { const k = r.proj_id || r.proj_abbr_name; if (!projs.has(k)) projs.set(k, r); });
     const amcs = [...new Set([...projs.values()].map(r => amcAbbr(r.comp_name_th)))].sort();
-    return { ...m, projects: projs.size, amcs };
+    // Active / Passive / … of each Thai feeder, from its SEC management_style code
+    const styles = [...new Set([...projs.values()].map(r => styleGroup(r.management_style)))];
+    return { ...m, projects: projs.size, amcs, styles };
   }).sort((a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
   MASTER_BY_KEY = new Map(MASTERS.map(m => [m.key, m]));
 
@@ -538,12 +554,25 @@ const letterOf = name => {
 };
 
 let homeLetter = "";   // "" = all
+let homeStyle = "";    // "" = all, else "Active" | "Passive" | "อื่น ๆ"
+const STYLE_FILTERS = ["Active", "Passive", "อื่น ๆ"];
+// Thai fund's management_style -> Active / Passive / อื่น ๆ (Inverse, Leveraged, Enhanced Index, Buy & Hold, ไม่ระบุ)
+function styleGroup(v) {
+  const label = (STYLE[clean(v).toUpperCase()] || [])[0];
+  return label === "Active" || label === "Passive" ? label : "อื่น ๆ";
+}
 
 function showHome() {
-  const p = new URLSearchParams(location.search).get("l");
-  if (p && LETTERS.includes(p)) homeLetter = p;
+  const p = new URLSearchParams(location.search);
+  if (LETTERS.includes(p.get("l"))) homeLetter = p.get("l");
+  if (STYLE_FILTERS.includes(p.get("s"))) homeStyle = p.get("s");
   $("result").innerHTML = `<div class="card top home">
     <h2>Master Fund ทั้งหมด</h2>
+    <div class="style-row">
+      <span class="style-lbl">กลยุทธ์ <span class="tip" tabindex="0"
+        data-tip="ดูจาก management style ของกองทุนไทยที่ลงทุนในกองหลักนั้น ถ้ามีกองไทยหลายแบบ กองหลักจะอยู่ในทุกแบบที่มี">ⓘ</span></span>
+      <div class="seg" id="styleBar" role="group" aria-label="กรองตามกลยุทธ์"></div>
+    </div>
     <nav class="az-bar" id="azBar" aria-label="กรองตามตัวอักษรแรก"></nav>
     <div class="home-count" id="homeCount"></div>
     <ul class="top-list" id="homeList"></ul>
@@ -552,38 +581,57 @@ function showHome() {
 }
 
 function renderHome() {
-  const url = new URL(location); url.search = homeLetter ? "?l=" + encodeURIComponent(homeLetter) : "";
+  const q = new URLSearchParams();
+  if (homeLetter) q.set("l", homeLetter);
+  if (homeStyle) q.set("s", homeStyle);
+  const url = new URL(location); url.search = q.toString() ? "?" + q : "";
   history.replaceState(null, "", url);
 
   const all = [...MASTERS].sort((a, b) => a.name.localeCompare(b.name));
+  const inStyle  = m => !homeStyle || m.styles.includes(homeStyle);
+  const inLetter = m => !homeLetter || letterOf(m.name) === homeLetter;
+
+  // style buttons count within the chosen letter; letter buttons count within the chosen style
+  const byLetter = all.filter(inLetter);
+  const sBtn = (v, label) => {
+    const n = v ? byLetter.filter(m => m.styles.includes(v)).length : byLetter.length;
+    return `<button type="button" data-style="${v}" aria-pressed="${homeStyle === v}" ${n || homeStyle === v ? "" : "disabled"}>
+      ${label}<span class="n">${n.toLocaleString()}</span></button>`;
+  };
+  $("styleBar").innerHTML = sBtn("", "ทั้งหมด") + STYLE_FILTERS.map(v => sBtn(v, v)).join("");
+
+  const byStyle = all.filter(inStyle);
   const count = new Map();
-  all.forEach(m => { const L = letterOf(m.name); count.set(L, (count.get(L) || 0) + 1); });
+  byStyle.forEach(m => { const L = letterOf(m.name); count.set(L, (count.get(L) || 0) + 1); });
   const btn = (L, label, n) => `<button type="button" data-letter="${L}" aria-pressed="${homeLetter === L}"
       title="${n.toLocaleString()} master fund">${label}</button>`;
-  $("azBar").innerHTML = btn("", "ทั้งหมด", all.length) + LETTERS.map(L => count.has(L)
-      ? btn(L, L, count.get(L)) : `<span aria-hidden="true">${L}</span>`).join("");
+  $("azBar").innerHTML = btn("", "ทั้งหมด", byStyle.length) + LETTERS.map(L => count.has(L) || homeLetter === L
+      ? btn(L, L, count.get(L) || 0) : `<span aria-hidden="true">${L}</span>`).join("");
 
-  const list = homeLetter ? all.filter(m => letterOf(m.name) === homeLetter) : all;
-  $("homeCount").textContent = homeLetter
-    ? `ขึ้นต้นด้วย ${homeLetter === "#" ? "ตัวอักษรอื่น" : homeLetter} · ${list.length.toLocaleString()} กอง`
-    : `${list.length.toLocaleString()} กอง เรียงตามชื่อ`;
-  $("homeList").innerHTML = list.map(m => `<li><button data-k="${esc(m.key)}">
+  const list = byStyle.filter(inLetter);
+  const parts = [];
+  if (homeStyle) parts.push(homeStyle);
+  if (homeLetter) parts.push(`ขึ้นต้นด้วย ${homeLetter === "#" ? "ตัวอักษรอื่น" : homeLetter}`);
+  $("homeCount").textContent = `${parts.length ? parts.join(" · ") + " · " : ""}${list.length.toLocaleString()} กอง เรียงตามชื่อ`;
+
+  $("homeList").innerHTML = list.length ? list.map(m => `<li><button data-k="${esc(m.key)}">
       <span class="nm"><span class="mn">${esc(m.name)}</span>
-      <span class="small">${esc(m.amcs.join(", "))}</span></span>
-      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("");
+      <span class="small">${esc([m.styles.filter(v => v !== "อื่น ๆ").join("/") , m.amcs.join(", ")].filter(Boolean).join(" · "))}</span></span>
+      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("")
+    : `<li class="opt-empty">ไม่พบ master fund ตามตัวกรองนี้</li>`;
 }
 
 $("result").addEventListener("click", e => {
   const b = e.target.closest("[data-k]");
   if (b) { const m = MASTER_BY_KEY.get(b.dataset.k); if (m) choose({ type: "master", m }); return; }
-  const l = e.target.closest("[data-letter]");
-  if (l) {
-    homeLetter = l.dataset.letter;
-    renderHome();
-    // if the list was scrolled, bring its top back into view
-    const card = document.querySelector(".home");
-    if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: "start" });
-  }
+  const l = e.target.closest("[data-letter]"), st = e.target.closest("[data-style]");
+  if (!l && !st) return;
+  if (l) homeLetter = l.dataset.letter;
+  if (st) homeStyle = st.dataset.style;
+  renderHome();
+  // if the list was scrolled, bring its top back into view
+  const card = document.querySelector(".home");
+  if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: "start" });
 });
 
 function showMaster(m, hitAbbr) {
