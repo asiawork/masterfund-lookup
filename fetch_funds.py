@@ -2,6 +2,7 @@ import os
 import requests
 import pandas as pd
 import re
+from master_names import annotate
 
 # 1. รับ API Key จาก GitHub Secrets
 API_KEY = os.getenv("SEC_API_KEY")
@@ -77,37 +78,17 @@ if not df.empty:
             
         print(f"หลังกรอง Feeder Fund ต่างประเทศ: เหลือ {len(df)} รายการ")
 
-    # 6. คลีนชื่อ Master Fund (ตัดคำนำหน้าภาษาไทย และตัด Class ทุกรูปแบบ)
-    def clean_master_fund_name(val):
-        if not val or pd.isna(val):
-            return ""
-        text = str(val).strip()
-
-        # แทนที่ en-dash ด้วย hyphen ปกติ
-        text = text.replace("–", "-")
-
-        # ตัดคำนำหน้า เช่น "ชื่อกองทุนหลัก :", "ชื่อกองทุน :", "กองทุนหลัก :", "Master Fund :",
-        # "กองทุนเปิด ...", "กองทุน ..." (รองรับทั้ง : ปกติและ ： แบบเต็มความกว้าง)
-        prefix_pattern = r"^\s*((ชื่อ\s*)?กองทุน\s*(หลัก)?\s*[:：]\s*|master\s*fund\s*(name)?\s*[:：]\s*|กองทุนเปิด\s+|กองทุน\s+)"
-        text = re.sub(prefix_pattern, "", text, flags=re.IGNORECASE)
-
-        # ตัดข้อความตั้งแต่ Class เป็นต้นไป เช่น (Class...), , Class..., - Class..., Class...
-        class_pattern = r"(\s*\(\s*Class.*|,\s*Class.*|-+\s*Class.*|\s+Class.*)"
-        text = re.sub(class_pattern, "", text, flags=re.IGNORECASE)
-
-        # เก็บกวาดเครื่องหมายตกค้างหน้า-หลังข้อความ
-        text = text.strip(" :：-–,()")
-
-        return text.strip()
-
-    df["Master_Fund_Search"] = df["feederfund_master_fund"].apply(clean_master_fund_name)
+    # 6. คลีนชื่อ Master Fund + จัดกลุ่มชื่อที่เป็นกองเดียวกัน (ดู master_names.py / master_aliases.csv)
+    df = df.where(df.notna(), None)
+    records = annotate(df.to_dict("records"))
+    df = pd.DataFrame(records)
 
     # 7. คัดเลือกเฉพาะคอลัมน์ที่ต้องการ (นำ policy_desc และ investment_policy_desc ออกแล้ว)
     desired_cols = [
         "unique_id", "comp_name_th", "comp_name_en", "proj_id", "regis_id", 
         "regis_date", "proj_name_th", "proj_name_en", 
         "proj_abbr_name", "fund_status", "management_style", 
-        "feederfund_master_fund", "Master_Fund_Search", "feederfund_country", 
+        "feederfund_master_fund", "Master_Fund_Search", "Master_Fund_Key", "feederfund_country", 
         "exchange_rate_protection_policy", "fund_class_name", "fund_class_detail", 
         "fund_class_description", "fund_class_tax_incentive_type", 
         "fund_class_isin_code", "last_upd_date", "Search_Name"

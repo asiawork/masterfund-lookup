@@ -325,9 +325,9 @@ function init(rows) {
   for (const r of rows) {
     const name = cleanMaster(r.Master_Fund_Search) || cleanMaster(r.feederfund_master_fund);
     if (!name) continue;
-    const key = norm(name);
-    if (!map.has(key)) map.set(key, { key, name, rows: [], variants: new Set(), countries: new Set() });
-    const m = map.get(key);
+    const gk = clean(r.Master_Fund_Key) || norm(name);   // group key built in master_names.py
+    if (!map.has(gk)) map.set(gk, { gk, name, rows: [], variants: new Set(), countries: new Set() });
+    const m = map.get(gk);
     m.rows.push(r);
     if (clean(r.feederfund_master_fund)) m.variants.add(clean(r.feederfund_master_fund));
     if (clean(r.feederfund_country)) m.countries.add(clean(r.feederfund_country));
@@ -338,9 +338,16 @@ function init(rows) {
     const amcs = [...new Set([...projs.values()].map(r => amcAbbr(r.comp_name_th)))].sort();
     // Active / Passive / … of each Thai feeder, from its SEC management_style code
     const styles = [...new Set([...projs.values()].map(r => styleGroup(r.management_style)))];
-    return { ...m, projects: projs.size, amcs, styles };
+    // search text covers every spelling the AMCs used, so an old spelling still finds the group
+    const key = norm([m.name, ...m.variants].join(" "));
+    return { ...m, key, projects: projs.size, amcs, styles };
   }).sort((a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
-  MASTER_BY_KEY = new Map(MASTERS.map(m => [m.key, m]));
+  MASTER_BY_KEY = new Map();
+  MASTERS.forEach(m => [m.name, ...m.variants].forEach(v => {
+    const k = norm(v); if (!MASTER_BY_KEY.has(k)) MASTER_BY_KEY.set(k, m);
+  }));
+  // home list buttons carry the display name
+  MASTERS.forEach(m => MASTER_BY_KEY.set(norm(m.name), m));
 
   // Thai funds (one entry per project, searchable by abbr, class names, Thai/English names)
   const fmap = new Map();
@@ -614,7 +621,7 @@ function renderHome() {
   if (homeLetter) parts.push(`ขึ้นต้นด้วย ${homeLetter === "#" ? "ตัวอักษรอื่น" : homeLetter}`);
   $("homeCount").textContent = `${parts.length ? parts.join(" · ") + " · " : ""}${list.length.toLocaleString()} กอง เรียงตามชื่อ`;
 
-  $("homeList").innerHTML = list.length ? list.map(m => `<li><button data-k="${esc(m.key)}">
+  $("homeList").innerHTML = list.length ? list.map(m => `<li><button data-k="${esc(norm(m.name))}">
       <span class="nm"><span class="mn">${esc(m.name)}</span>
       <span class="small">${esc([m.styles.filter(v => v !== "อื่น ๆ").join("/") , m.amcs.join(", ")].filter(Boolean).join(" · "))}</span></span>
       <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("")
