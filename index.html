@@ -186,7 +186,15 @@
   .sortlbl { display: inline-flex; align-items: center; gap: 6px; }
   .filter-btn, .side-done { display: none; }
   .browse2 .active-bar { margin: 10px 0 4px; min-height: 0; }
-  .tag-detail { font-size: 12.5px; color: var(--muted); margin: -8px 0 16px; line-height: 1.6; }
+  .tag-detail { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: -4px 0 18px;
+                font-size: 13.5px; line-height: 1.5; }
+  .tag-detail dt { color: var(--muted); }
+  .tag-detail dd { margin: 0; color: var(--text); }
+  .row-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tg { font-size: 12px; line-height: 1; padding: 4px 8px; border-radius: 999px; background: #E3EBF7; color: var(--ink); font-weight: 500; }
+  .tg-m { background: #F0F2F5; color: #4A5568; }
+  .kv { display: flex; flex-wrap: wrap; gap: 4px 22px; margin-top: 7px; font-size: 13px; color: var(--text); }
+  .kv i { font-style: normal; color: var(--muted); margin-right: 6px; }
   @media (max-width: 820px) {
     .browse2 { grid-template-columns: 1fr; gap: 10px; }
     .side { display: none; position: static; max-height: none; order: 0; }
@@ -709,7 +717,9 @@ const MARKET = [
   ["vn",     "เวียดนาม",        t => has(t.countries, "Vietnam")],
   ["asean",  "อาเซียน / ไทย / สิงคโปร์", t => has(t.countries, "Indonesia", "Singapore", "Thailand", "Malaysia", "Cambodia", "Myanmar") || has(t.theme, "ASEAN")],
   ["au",     "ออสเตรเลีย",      t => has(t.countries, "Australia") && t.countries.length <= 2],
-  ["asia",   "เอเชีย (ทั้งภูมิภาค)", t => has(t.region, "Asia", "Asia ex Japan", "Asia Pacific") && (!t.countries.length || t.countries.length > 2)],
+  ["asia",   "เอเชีย",               t => has(t.region, "Asia") && (!t.countries.length || t.countries.length > 2)],
+  ["axj",    "เอเชียไม่รวมญี่ปุ่น",     t => has(t.region, "Asia ex Japan")],
+  ["apac",   "เอเชียแปซิฟิก",         t => has(t.region, "Asia Pacific") && t.countries.length !== 1],
   ["em",     "ตลาดเกิดใหม่",     t => has(t.region, "Emerging Markets", "Latin America") || has(t.countries, "Brazil")],
   ["global", "ทั่วโลก",          t => has(t.region, "Global", "Developed Markets") && t.countries.length !== 1]
 ];
@@ -734,15 +744,14 @@ const THEME = [
   ["absret", "Absolute Return / Hedge",  ["Absolute Return", "Equity Long/Short", "Global Macro", "Multi-Strategy", "Risk Parity", "All Weather", "Currency/FX"]]
 ].map(([k, label, themes, sectors = [], styles = []]) => [k, label, t =>
   has(t.theme, ...themes) || (sectors.length && has(t.sector, ...sectors) && !t.theme.length) || has(t.style, ...styles)]);
-const MGMT = [["Passive", "Passive (ตามดัชนี / ETF)"], ["Active", "Active (ผู้จัดการเลือกหุ้น)"]];
+const MGMT = [["Passive", "Passive"], ["Active", "Active"]];
 
 const FACETS = [
   { k: "a",  title: "ประเภท",  opts: ASSET.map(([v, l]) => [v, l, t => t.asset[0] === v]) },
   { k: "mk", title: "ตลาด",    opts: MARKET,
     tip: "กองที่ลงทุนทั้งภูมิภาค เช่น ตลาดเกิดใหม่ หรือทั่วโลก จะอยู่ในกลุ่มภูมิภาคนั้น ไม่แยกรายประเทศ" },
   { k: "th", title: "ธีม",      opts: THEME },
-  { k: "p",  title: "การบริหารกองหลัก", opts: MGMT.map(([v, l]) => [v, l, t => t.mgmt.includes(v)]),
-    tip: "ดูจากกองหลัก (master fund) ไม่ใช่กองไทย: Passive = ลงทุนตามดัชนี, Active = ผู้จัดการเลือกหลักทรัพย์เอง (ETF บางตัวก็เป็น Active)" }
+  { k: "p",  title: "การบริหารกองหลัก", opts: MGMT.map(([v, l]) => [v, l, t => t.mgmt.includes(v)]) }
 ];
 const MIN_GROUP = 2;   // a group needs at least this many master funds to be listed (smaller ones stay findable by search)
 const SHOW = 8;        // options shown before "ดูเพิ่ม"
@@ -849,23 +858,34 @@ function renderHome() {
   $("homeCount").innerHTML = `<b>${list.length.toLocaleString()}</b> master fund · กองทุนไทย <b>${funds.toLocaleString()}</b> กอง`;
   $("homeList").innerHTML = list.length ? list.map(m => `<li><button data-k="${esc(norm(m.name))}">
       <span class="nm"><span class="mn">${esc(m.name)}</span>
-      <span class="tagline">${esc(tagLine(m))}</span>
-      <span class="small">${esc(m.amcs.join(", "))}</span></span>
+      ${rowTags(m)}</span>
       <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("")
     : `<li class="opt-empty">ไม่พบ master fund ตามตัวกรองนี้ ลองเอาตัวกรองบางตัวออก</li>`;
 }
 
-// one plain line under each master in the list
-function tagLine(m) {
+const TH_C = { "United States": "สหรัฐฯ", "China": "จีน", "Japan": "ญี่ปุ่น", "India": "อินเดีย", "Hong Kong": "ฮ่องกง", "Taiwan": "ไต้หวัน",
+               "Vietnam": "เวียดนาม", "South Korea": "เกาหลีใต้", "Singapore": "สิงคโปร์", "Australia": "ออสเตรเลีย", "Thailand": "ไทย",
+               "Brazil": "บราซิล", "Indonesia": "อินโดนีเซีย", "Germany": "เยอรมนี", "Canada": "แคนาดา", "Macau": "มาเก๊า",
+               "Malaysia": "มาเลเซีย", "United Kingdom": "สหราชอาณาจักร", "France": "ฝรั่งเศส", "Italy": "อิตาลี",
+               "Pakistan": "ปากีสถาน", "Sri Lanka": "ศรีลังกา", "Bangladesh": "บังกลาเทศ", "New Zealand": "นิวซีแลนด์",
+               "Cambodia": "กัมพูชา", "Myanmar": "เมียนมา" };
+const thc = c => TH_C[c] || c;
+
+// under each master in the list: type + strategy as tags, then market / theme / index as separate labelled items
+function rowTags(m) {
   const t = m.tag;
-  const TH_C = { "United States": "สหรัฐฯ", "China": "จีน", "Japan": "ญี่ปุ่น", "India": "อินเดีย", "Hong Kong": "ฮ่องกง", "Taiwan": "ไต้หวัน",
-                 "Vietnam": "เวียดนาม", "South Korea": "เกาหลีใต้", "Singapore": "สิงคโปร์", "Australia": "ออสเตรเลีย", "Thailand": "ไทย",
-                 "Brazil": "บราซิล", "Indonesia": "อินโดนีเซีย", "Germany": "เยอรมนี", "Canada": "แคนาดา" };
-  const where = t.countries.length ? t.countries.slice(0, 3).map(c => TH_C[c] || c).join(", ")
-    : m.cat.mk.map(v => optLabel("mk", v)).join(", ");
-  const ex = t.excludes.length ? ` (ไม่รวม${t.excludes.map(c => TH_C[c] || c).join(", ")})` : "";
-  const theme = t.theme.slice(0, 2).join(", ");
-  return [optLabel("a", t.asset[0]).split(" /")[0], where + ex, theme, t.index[0] ? "ดัชนี " + t.index[0] : "", t.mgmt[0]].filter(Boolean).join(" · ");
+  const tags = [optLabel("a", t.asset[0]), ...t.mgmt].filter(Boolean)
+    .map((v, i) => `<span class="tg${i ? " tg-m" : ""}">${esc(v)}</span>`).join("");
+  const where = (t.countries.length ? t.countries.slice(0, 3).map(thc).join(", ") + (t.countries.length > 3 ? " ฯลฯ" : "")
+    : m.cat.mk.map(v => optLabel("mk", v)).join(", "))
+    + (t.excludes.length ? ` (ไม่รวม${t.excludes.map(thc).join(", ")})` : "");
+  const items = [
+    where && ["ตลาด", where],
+    t.theme.length && ["ธีม", t.theme.slice(0, 3).join(", ")],
+    t.index.length && ["ดัชนี", t.index[0]]
+  ].filter(Boolean);
+  return `<span class="row-tags">${tags}</span>` + (items.length
+    ? `<span class="kv">${items.map(([k, v]) => `<span><i>${k}</i>${esc(v)}</span>`).join("")}</span>` : "");
 }
 
 // groups on a master's page; each opens the list filtered by that group
@@ -875,16 +895,17 @@ function tagChips(m) {
   const t = m.tag;
   const chips = FACETS.flatMap(f => m.cat[f.k].map(v =>
     `<button type="button" class="chip" data-go="${f.k}" data-v="${esc(v)}" title="ดู master fund อื่นในหมวดนี้">${esc(optLabel(f.k, v))}</button>`));
-  const detail = [
-    t.countries.length ? "ประเทศ: " + t.countries.join(", ") : "",
-    t.excludes.length ? "ไม่รวม: " + t.excludes.join(", ") : "",
-    t.theme.length ? "ธีม: " + t.theme.join(", ") : "",
-    t.sector.length ? "อุตสาหกรรม: " + t.sector.join(", ") : "",
-    t.style.length ? "สไตล์: " + t.style.join(", ") : "",
-    t.bond_type.length ? "ตราสารหนี้: " + t.bond_type.join(", ") : "",
-    t.index.length ? "ดัชนีอ้างอิง: " + t.index.join(", ") : ""
-  ].filter(Boolean).join(" · ");
-  return `<div class="tags" aria-label="หมวดหมู่">${chips.join("")}</div>${detail ? `<div class="tag-detail">${esc(detail)}</div>` : ""}`;
+  const rows = [
+    ["ประเทศ", t.countries.map(thc).join(", ")],
+    ["ไม่รวม", t.excludes.map(thc).join(", ")],
+    ["ธีม", t.theme.join(", ")],
+    ["อุตสาหกรรม", t.sector.join(", ")],
+    ["สไตล์", t.style.join(", ")],
+    ["ตราสารหนี้", t.bond_type.join(", ")],
+    ["ดัชนีอ้างอิง", t.index.join(", ")]
+  ].filter(([, v]) => v);
+  return `<div class="tags" aria-label="หมวดหมู่">${chips.join("")}</div>` + (rows.length
+    ? `<dl class="tag-detail">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : "");
 }
 
 $("result").addEventListener("change", e => {
