@@ -166,6 +166,58 @@
 
   .upload { text-align: center; }
 
+  /* ---------- browse by category ---------- */
+  .browse h2 { margin: 0 0 4px; font-size: 17px; color: var(--ink); }
+  .browse .lead { margin: 0 0 16px; color: var(--muted); font-size: 13.5px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .tile {
+    font: inherit; text-align: left; cursor: pointer; border: 1px solid var(--line); border-radius: 10px;
+    background: #fff; padding: 12px 14px; color: var(--ink); display: flex; flex-direction: column; gap: 2px;
+  }
+  .tile b { font-size: 15.5px; font-weight: 600; }
+  .tile .n { font-size: 12.5px; color: var(--muted); }
+  .tile:hover { border-color: var(--lotus); background: var(--wash); }
+  .tile[aria-pressed="true"] { background: var(--lotus); border-color: var(--lotus); color: #fff; }
+  .tile[aria-pressed="true"] .n { color: rgba(255,255,255,.85); }
+  .tile:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+  .facet { padding: 10px 0; border-top: 1px solid var(--line); }
+  .facet-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13.5px; color: var(--muted); font-weight: 500; }
+  .facet-h input {
+    margin-left: auto; font: inherit; font-size: 13px; padding: 4px 10px; border: 1px solid var(--line);
+    border-radius: 6px; width: 170px; max-width: 45%;
+  }
+  .facet-h input:focus { outline: none; border-color: var(--lotus); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font: inherit; font-size: 13.5px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .chip .n { font-size: 11.5px; color: var(--muted); }
+  .chip:hover { border-color: var(--lotus); }
+  .chip[aria-pressed="true"] { background: var(--lotus); border-color: var(--lotus); color: #fff; }
+  .chip[aria-pressed="true"] .n { color: rgba(255,255,255,.85); }
+  .chip:focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+  .chip.more { border-style: dashed; color: var(--lotus); }
+  .active-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 12px; min-height: 30px; }
+  .active-bar .lbl { font-size: 13px; color: var(--muted); margin-right: 2px; }
+  .pill {
+    font: inherit; font-size: 13px; padding: 3px 6px 3px 10px; border-radius: 999px; cursor: pointer;
+    border: 0; background: #E3EBF7; color: var(--ink); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .pill span { font-size: 12px; color: var(--muted); }
+  .pill:hover { background: #D3E0F3; }
+  .linkbtn { font: inherit; font-size: 13px; border: 0; background: none; color: var(--lotus); cursor: pointer; padding: 3px 4px; }
+  .linkbtn:hover { text-decoration: underline; }
+  .linkbtn.jump { margin-left: auto; font-weight: 600; }
+  .res-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+              margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .res-head .home-count { margin: 0; }
+  .sortsel { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+  .tagline { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); white-space: normal; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 16px; }
+  .tags .chip { font-size: 12.5px; padding: 2px 9px; }
+  .tags .lbl { font-size: 12.5px; color: var(--muted); align-self: center; }
+
   /* ---------- mobile ---------- */
   @media (max-width: 640px) {
     .wrap { padding: 0 14px; }
@@ -235,6 +287,7 @@
 <script>
 const DATA_URL = "funds_data.json";
 const AMC_URL  = "amc_abbr.csv";
+const TAGS_URL = "master_tags.csv";
 const MAX_MASTERS = 8, MAX_FUNDS = 6;
 
 let MASTERS = [], MASTER_BY_KEY = new Map(), FUNDS = [], AMC = new Map();
@@ -306,15 +359,17 @@ const amcAbbr = name => AMC.get(amcKey(name)) || amcShortEn(AMC_EN.get(amcKey(na
 // ---------- load ----------
 Promise.all([
   fetch(DATA_URL, { cache: "no-cache" }).then(r => r.ok ? r.json() : Promise.reject()),
-  fetch(AMC_URL, { cache: "no-cache" }).then(r => r.ok ? r.text() : "").catch(() => "")
-]).then(([rows, csv]) => { if (csv) parseAmc(csv); init(rows); })
+  fetch(AMC_URL, { cache: "no-cache" }).then(r => r.ok ? r.text() : "").catch(() => ""),
+  fetch(TAGS_URL, { cache: "no-cache" }).then(r => r.ok ? r.text() : "").catch(() => "")
+]).then(([rows, csv, tags]) => { if (csv) parseAmc(csv); if (tags) parseTags(tags); init(rows); })
   .catch(() => { $("upload").classList.remove("hidden"); $("stats").textContent = ""; });
 
 $("file").addEventListener("change", async e => {
   let rows = null;
   for (const f of e.target.files) {
     const t = await f.text();
-    if (f.name.toLowerCase().endsWith(".csv")) parseAmc(t); else rows = JSON.parse(t);
+    if (f.name.toLowerCase().includes("tags")) parseTags(t);
+    else if (f.name.toLowerCase().endsWith(".csv")) parseAmc(t); else rows = JSON.parse(t);
   }
   if (rows) { $("upload").classList.add("hidden"); init(rows); }
 });
@@ -340,7 +395,8 @@ function init(rows) {
     const styles = [...new Set([...projs.values()].map(r => styleGroup(r.management_style)))];
     // search text covers every spelling the AMCs used, so an old spelling still finds the group
     const key = norm([m.name, ...m.variants].join(" "));
-    return { ...m, key, projects: projs.size, amcs, styles };
+    const tag = TAGS.get(norm(m.name)) || [...m.variants].map(v => TAGS.get(norm(v))).find(Boolean) || UNTAGGED;
+    return { ...m, key, projects: projs.size, amcs, styles, tag };
   }).sort((a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
   MASTER_BY_KEY = new Map();
   MASTERS.forEach(m => [m.name, ...m.variants].forEach(v => {
@@ -552,94 +608,268 @@ function choose(it) {
   showMaster(m, highlightAbbr);
 }
 
-// ---------- home: every master fund, grouped A–Z ----------
-const LETTERS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0–9", "#"];
-// first letter of the name, ignoring leading symbols and accents (É → E)
-const letterOf = name => {
-  const c = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/^[^\p{L}\p{N}]+/u, "").charAt(0).toUpperCase();
-  return /[A-Z]/.test(c) ? c : /[0-9]/.test(c) ? "0–9" : "#";
-};
-
-let homeLetter = "";   // "" = all
-let homeStyle = "";    // "" = all, else "Active" | "Passive" | "อื่น ๆ"
-const STYLE_FILTERS = ["Active", "Passive", "อื่น ๆ"];
-// Thai fund's management_style -> Active / Passive / อื่น ๆ (Inverse, Leveraged, Enhanced Index, Buy & Hold, ไม่ระบุ)
+// Thai fund's management_style -> Active / Passive / อื่น ๆ
 function styleGroup(v) {
   const label = (STYLE[clean(v).toUpperCase()] || [])[0];
   return label === "Active" || label === "Passive" ? label : "อื่น ๆ";
 }
 
-function showHome() {
+// ---------- categories (master_tags.csv) ----------
+// one row per master fund, tags read from each Thai feeder's SEC investment policy
+const TAGS = new Map();
+const TAG_COLS = ["asset", "region", "countries", "excludes", "sector", "theme", "style", "index", "mgmt", "bond_type"];
+const UNTAGGED = { asset: ["Untagged"], region: [], countries: [], excludes: [], sector: [], theme: [], style: [], index: [], mgmt: [], bond_type: [], conf: "" };
+
+function csvRows(text) {
+  // small RFC-4180 parser: quoted fields may contain commas, quotes ("") and newlines
+  const out = []; let row = [], f = "", q = false;
+  text = text.replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { f += '"'; i++; }
+      else if (c === '"') q = false;
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(f); f = ""; if (row.some(Boolean)) out.push(row); row = [];
+    } else f += c;
+  }
+  row.push(f); if (row.some(Boolean)) out.push(row);
+  return out;
+}
+function parseTags(text) {
+  const [hdr, ...rows] = csvRows(text);
+  const ix = Object.fromEntries(hdr.map((h, i) => [h.trim(), i]));
+  if (ix.master_fund == null) return;
+  rows.forEach(r => {
+    const t = { conf: (r[ix.conf] || "").trim() };
+    TAG_COLS.forEach(c => t[c] = String(r[ix[c]] ?? "").split(";").map(s => s.trim()).filter(Boolean));
+    TAGS.set(norm(r[ix.master_fund]), t);
+  });
+}
+
+// Thai labels (anything not listed is shown as written, e.g. theme names)
+const TH = {
+  asset: { "Equity": "หุ้น", "Fixed Income": "ตราสารหนี้", "Multi-Asset": "ผสม", "Real Estate": "อสังหาฯ / REITs",
+           "Commodity": "สินค้าโภคภัณฑ์", "Alternative": "สินทรัพย์ทางเลือก", "Untagged": "ยังไม่จัดหมวด" },
+  region: { "Global": "ทั่วโลก", "Developed Markets": "ตลาดพัฒนาแล้ว", "Emerging Markets": "ตลาดเกิดใหม่",
+            "North America": "อเมริกาเหนือ", "Europe": "ยุโรป", "Asia": "เอเชีย", "Asia ex Japan": "เอเชีย (ไม่รวมญี่ปุ่น)",
+            "Asia Pacific": "เอเชียแปซิฟิก", "Latin America": "ละตินอเมริกา" },
+  countries: { "United States": "สหรัฐฯ", "China": "จีน", "Japan": "ญี่ปุ่น", "India": "อินเดีย", "Hong Kong": "ฮ่องกง",
+               "Taiwan": "ไต้หวัน", "Vietnam": "เวียดนาม", "South Korea": "เกาหลีใต้", "Singapore": "สิงคโปร์",
+               "Australia": "ออสเตรเลีย", "Thailand": "ไทย", "Brazil": "บราซิล", "Canada": "แคนาดา", "Germany": "เยอรมนี",
+               "Indonesia": "อินโดนีเซีย", "Malaysia": "มาเลเซีย", "United Kingdom": "สหราชอาณาจักร", "France": "ฝรั่งเศส",
+               "Italy": "อิตาลี", "Macau": "มาเก๊า", "Pakistan": "ปากีสถาน", "Sri Lanka": "ศรีลังกา", "Bangladesh": "บังกลาเทศ",
+               "New Zealand": "นิวซีแลนด์", "Cambodia": "กัมพูชา", "Myanmar": "เมียนมา" },
+  sector: { "Information Technology": "เทคโนโลยี", "Industrials": "อุตสาหกรรม", "Utilities": "สาธารณูปโภค",
+            "Real Estate": "อสังหาริมทรัพย์", "Health Care": "สุขภาพ", "Financials": "การเงิน", "Energy": "พลังงาน",
+            "Materials": "วัตถุดิบ / เหมืองแร่", "Communication Services": "สื่อสาร", "Consumer Discretionary": "สินค้าฟุ่มเฟือย",
+            "Consumer Staples": "สินค้าจำเป็น" },
+  style: { "Growth": "Growth (หุ้นเติบโต)", "Value": "Value (หุ้นคุณค่า)", "Income": "เน้นรายได้", "Dividend": "ปันผลสูง",
+           "Quality": "Quality", "Low Volatility": "ผันผวนต่ำ", "Small Cap": "หุ้นเล็ก", "Mid Cap": "หุ้นกลาง",
+           "Large Cap": "หุ้นใหญ่", "Mega Cap": "หุ้นใหญ่พิเศษ" },
+  mgmt: { "Passive": "Passive (ตามดัชนี)", "Active": "Active (ผู้จัดการเลือกหุ้น)" }
+};
+const lbl = (col, v) => (TH[col] && TH[col][v]) || v;
+
+const ASSET_ORDER = ["Equity", "Fixed Income", "Multi-Asset", "Real Estate", "Commodity", "Alternative", "Untagged"];
+// order = drill-down order on the page; each facet is hidden until it has 2+ choices left
+const FACETS = [
+  { k: "r",  col: "region",    title: "ภูมิภาค" },
+  { k: "c",  col: "countries", title: "ประเทศ",
+    tip: "เฉพาะกองหลักที่นโยบายลงทุนระบุชื่อประเทศ กองที่ลงทั้งภูมิภาค เช่น ตลาดเกิดใหม่ จะไม่แยกรายประเทศ" },
+  { k: "sec", col: "sector",   title: "กลุ่มอุตสาหกรรม" },
+  { k: "t",  col: "theme",     title: "ธีม", search: true },
+  { k: "b",  col: "bond_type", title: "ประเภทตราสารหนี้", more: true },
+  { k: "st", col: "style",     title: "สไตล์", more: true },
+  { k: "p",  col: "mgmt",      title: "การบริหารกองหลัก", more: true,
+    tip: "ดูจากกองหลัก (master fund): Passive = ลงทุนตามดัชนี เช่น ETF, Active = ผู้จัดการกองเลือกหลักทรัพย์เอง" }
+];
+const SHOW = 10;                // chips shown before "+ อีก n"
+let sel = {};                   // { a: "Equity", r: "Asia", ... }
+let expanded = new Set();       // facets showing every chip
+let themeQuery = "";
+let showMore = false;          // secondary facets (style, bond type, Active/Passive)
+let sortBy = "count";
+
+function readState() {
   const p = new URLSearchParams(location.search);
-  if (LETTERS.includes(p.get("l"))) homeLetter = p.get("l");
-  if (STYLE_FILTERS.includes(p.get("s"))) homeStyle = p.get("s");
-  $("result").innerHTML = `<div class="card top home">
-    <h2>Master Fund ทั้งหมด</h2>
-    <div class="style-row">
-      <span class="style-lbl">กลยุทธ์ <span class="tip" tabindex="0"
-        data-tip="ดูจาก management style ของกองทุนไทยที่ลงทุนในกองหลักนั้น ถ้ามีกองไทยหลายแบบ กองหลักจะอยู่ในทุกแบบที่มี">ⓘ</span></span>
-      <div class="seg" id="styleBar" role="group" aria-label="กรองตามกลยุทธ์"></div>
+  sel = {};
+  ["a", ...FACETS.map(f => f.k)].forEach(k => { if (p.get(k)) sel[k] = p.get(k); });
+  if (p.get("sort") === "az") sortBy = "az";
+}
+function writeState() {
+  const q = new URLSearchParams(sel);
+  if (sortBy === "az") q.set("sort", "az");
+  const url = new URL(location); url.search = q.toString() ? "?" + q : "";
+  history.replaceState(null, "", url);
+}
+const hasVal = (m, col, v) => col === "asset" ? m.tag.asset[0] === v : m.tag[col].includes(v);
+// masters matching every selection except the one being counted
+const matching = skip => MASTERS.filter(m =>
+  (skip === "a" || !sel.a || hasVal(m, "asset", sel.a)) &&
+  FACETS.every(f => f.k === skip || !sel[f.k] || hasVal(m, f.col, sel[f.k])));
+
+function showHome() {
+  readState();
+  $("result").innerHTML = `<div class="card browse home">
+    <h2>เรียกดูตามหมวดหมู่</h2>
+    <p class="lead">เลือกประเภทสินทรัพย์ แล้วค่อย ๆ กรองลงไป ตัวเลขคือจำนวน master fund ที่ยังเหลือในแต่ละตัวเลือก
+      หรือพิมพ์ชื่อกองในช่องค้นหาด้านบนได้เหมือนเดิม</p>
+    <div class="tiles" id="tiles" role="group" aria-label="ประเภทสินทรัพย์"></div>
+    <div class="active-bar" id="activeBar"></div>
+    <div id="facets"></div>
+    <div class="res-head">
+      <div class="home-count" id="homeCount"></div>
+      <label class="small">เรียงตาม
+        <select class="sortsel" id="sortSel">
+          <option value="count">จำนวนกองไทยที่ลงทุน</option>
+          <option value="az">ชื่อ A–Z</option>
+        </select></label>
     </div>
-    <nav class="az-bar" id="azBar" aria-label="กรองตามตัวอักษรแรก"></nav>
-    <div class="home-count" id="homeCount"></div>
     <ul class="top-list" id="homeList"></ul>
   </div>`;
+  $("sortSel").value = sortBy;
+  $("sortSel").addEventListener("change", e => { sortBy = e.target.value; renderHome(); });
   renderHome();
 }
 
-function renderHome() {
-  const q = new URLSearchParams();
-  if (homeLetter) q.set("l", homeLetter);
-  if (homeStyle) q.set("s", homeStyle);
-  const url = new URL(location); url.search = q.toString() ? "?" + q : "";
-  history.replaceState(null, "", url);
+function chipsHtml(f, list) {
+  const shown = expanded.has(f.k) || list.length <= SHOW + 2 ? list
+    : list.slice(0, SHOW).concat(list.slice(SHOW).filter(([v]) => v === sel[f.k]));
+  let h = shown.map(([v, n]) => `<button type="button" class="chip" data-f="${f.k}" data-v="${esc(v)}"
+      aria-pressed="${sel[f.k] === v}">${esc(lbl(f.col, v))}<span class="n">${n}</span></button>`).join("");
+  if (shown.length < list.length) h += `<button type="button" class="chip more" data-more="${f.k}">+ อีก ${list.length - shown.length}</button>`;
+  else if (expanded.has(f.k) && list.length > SHOW + 2) h += `<button type="button" class="chip more" data-more="${f.k}">ย่อ</button>`;
+  return h || `<span class="small">ไม่พบธีมที่ตรงกับ “${esc(themeQuery)}”</span>`;
+}
 
-  const all = [...MASTERS].sort((a, b) => a.name.localeCompare(b.name));
-  const inStyle  = m => !homeStyle || m.styles.includes(homeStyle);
-  const inLetter = m => !homeLetter || letterOf(m.name) === homeLetter;
-
-  // style buttons count within the chosen letter; letter buttons count within the chosen style
-  const byLetter = all.filter(inLetter);
-  const sBtn = (v, label) => {
-    const n = v ? byLetter.filter(m => m.styles.includes(v)).length : byLetter.length;
-    return `<button type="button" data-style="${v}" aria-pressed="${homeStyle === v}" ${n || homeStyle === v ? "" : "disabled"}>
-      ${label}<span class="n">${n.toLocaleString()}</span></button>`;
-  };
-  $("styleBar").innerHTML = sBtn("", "ทั้งหมด") + STYLE_FILTERS.map(v => sBtn(v, v)).join("");
-
-  const byStyle = all.filter(inStyle);
+function facetList(f) {
   const count = new Map();
-  byStyle.forEach(m => { const L = letterOf(m.name); count.set(L, (count.get(L) || 0) + 1); });
-  const btn = (L, label, n) => `<button type="button" data-letter="${L}" aria-pressed="${homeLetter === L}"
-      title="${n.toLocaleString()} master fund">${label}</button>`;
-  $("azBar").innerHTML = btn("", "ทั้งหมด", byStyle.length) + LETTERS.map(L => count.has(L) || homeLetter === L
-      ? btn(L, L, count.get(L) || 0) : `<span aria-hidden="true">${L}</span>`).join("");
+  matching(f.k).forEach(m => new Set(m.tag[f.col]).forEach(v => count.set(v, (count.get(v) || 0) + 1)));
+  let list = [...count].sort((a, b) => b[1] - a[1] || lbl(f.col, a[0]).localeCompare(lbl(f.col, b[0])));
+  if (f.search && themeQuery) {
+    const q = norm(themeQuery);
+    list = list.filter(([v]) => norm(v + " " + lbl(f.col, v)).includes(q));
+  }
+  return list;
+}
 
-  const list = byStyle.filter(inLetter);
-  const parts = [];
-  if (homeStyle) parts.push(homeStyle);
-  if (homeLetter) parts.push(`ขึ้นต้นด้วย ${homeLetter === "#" ? "ตัวอักษรอื่น" : homeLetter}`);
-  $("homeCount").textContent = `${parts.length ? parts.join(" · ") + " · " : ""}${list.length.toLocaleString()} กอง เรียงตามชื่อ`;
+function renderHome() {
+  writeState();
+  // asset tiles: count within the other selections
+  const base = matching("a");
+  const total = base.length;
+  const byAsset = new Map();
+  base.forEach(m => { const a = m.tag.asset[0]; const e = byAsset.get(a) || { n: 0, funds: 0 }; e.n++; e.funds += m.projects; byAsset.set(a, e); });
+  const tile = (v, title, e) => `<button type="button" class="tile" data-f="a" data-v="${esc(v)}" aria-pressed="${(sel.a || "") === v}">
+      <b>${esc(title)}</b><span class="n">${e.n.toLocaleString()} master · ${e.funds.toLocaleString()} กองไทย</span></button>`;
+  const all = { n: total, funds: base.reduce((s, m) => s + m.projects, 0) };
+  $("tiles").innerHTML = tile("", "ทั้งหมด", all) +
+    ASSET_ORDER.filter(a => byAsset.has(a) || sel.a === a).map(a => tile(a, lbl("asset", a), byAsset.get(a) || { n: 0, funds: 0 })).join("");
 
+  // facets: hide a facet once it can no longer narrow the list (fewer than 2 choices), unless something is picked in it
+  const hiddenMore = [];
+  $("facets").innerHTML = FACETS.map(f => {
+    const raw = facetList({ ...f, search: false });
+    if (raw.length < 2 && !sel[f.k]) return "";
+    if (f.more && !showMore && !sel[f.k]) { hiddenMore.push(f.title); return ""; }
+    const tip = f.tip ? ` <span class="tip" tabindex="0" data-tip="${esc(f.tip)}">ⓘ</span>` : "";
+    const search = f.search && raw.length > SHOW + 2
+      ? `<input type="search" id="themeQ" placeholder="ค้นหาธีม เช่น AI, ทองคำ" value="${esc(themeQuery)}" aria-label="ค้นหาธีม">` : "";
+    return `<div class="facet" data-facet="${f.k}"><div class="facet-h">${f.title}${tip}${search}</div>
+      <div class="chips" id="chips-${f.k}">${chipsHtml(f, facetList(f))}</div></div>`;
+  }).join("") + (hiddenMore.length
+    ? `<div class="facet"><button type="button" class="linkbtn" data-showmore="1">+ ตัวกรองเพิ่มเติม: ${hiddenMore.join(", ")}</button></div>`
+    : showMore ? `<div class="facet"><button type="button" class="linkbtn" data-showmore="0">ซ่อนตัวกรองเพิ่มเติม</button></div>` : "");
+  const tq = $("themeQ");
+  if (tq) tq.addEventListener("input", e => {
+    themeQuery = e.target.value;
+    const f = FACETS.find(x => x.k === "t");
+    $("chips-t").innerHTML = chipsHtml(f, facetList(f));
+  });
+
+  // what is selected, each removable on its own
+  const picks = Object.entries(sel).map(([k, v]) => {
+    const f = FACETS.find(x => x.k === k);
+    const title = f ? f.title : "สินทรัพย์";
+    return `<button type="button" class="pill" data-clear="${k}" title="เอาตัวกรองนี้ออก"><span>${title}:</span>${esc(lbl(f ? f.col : "asset", v))} ✕</button>`;
+  });
+  $("activeBar").innerHTML = picks.length
+    ? `<span class="lbl">ตัวกรอง</span>${picks.join("")}<button type="button" class="linkbtn" data-clear="*">ล้างทั้งหมด</button>
+       <button type="button" class="linkbtn jump" data-jump="1">ดูผลลัพธ์ ${matching(null).length} กอง ↓</button>` : "";
+  $("activeBar").classList.toggle("hidden", !picks.length);
+
+  const list = matching(null).sort(sortBy === "az"
+    ? (a, b) => a.name.localeCompare(b.name)
+    : (a, b) => b.projects - a.projects || a.name.localeCompare(b.name));
+  const funds = list.reduce((s, m) => s + m.projects, 0);
+  $("homeCount").textContent = `${list.length.toLocaleString()} master fund · กองทุนไทย ${funds.toLocaleString()} กอง`;
   $("homeList").innerHTML = list.length ? list.map(m => `<li><button data-k="${esc(norm(m.name))}">
       <span class="nm"><span class="mn">${esc(m.name)}</span>
-      <span class="small">${esc([m.styles.filter(v => v !== "อื่น ๆ").join("/") , m.amcs.join(", ")].filter(Boolean).join(" · "))}</span></span>
+      <span class="tagline">${esc(tagLine(m))}</span>
+      <span class="small">${esc(m.amcs.join(", "))}</span></span>
       <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${m.projects} กอง</span></button></li>`).join("")
-    : `<li class="opt-empty">ไม่พบ master fund ตามตัวกรองนี้</li>`;
+    : `<li class="opt-empty">ไม่พบ master fund ตามตัวกรองนี้ ลองเอาตัวกรองบางตัวออก</li>`;
+}
+
+// short one-line summary of a master's tags
+function tagLine(m) {
+  const t = m.tag;
+  const where = t.countries.length ? t.countries.map(v => lbl("countries", v)).join(", ") : t.region.map(v => lbl("region", v)).join(", ");
+  const ex = t.excludes.length ? ` (ไม่รวม ${t.excludes.map(v => lbl("countries", v)).join(", ")})` : "";
+  return [t.asset.map(v => lbl("asset", v)).join(""), where + ex, t.theme.slice(0, 3).join(", ") || t.sector.map(v => lbl("sector", v)).join(", "),
+          t.index[0] ? "ดัชนี " + t.index[0] : "", t.mgmt[0]].filter(Boolean).join(" · ");
+}
+
+// tag chips on a master's page; clicking one opens the category view with just that filter
+function tagChips(m) {
+  const t = m.tag; if (t === UNTAGGED) return "";
+  const c = (k, col, v) => `<button type="button" class="chip" data-go="${k}" data-v="${esc(v)}">${esc(lbl(col, v))}</button>`;
+  const parts = [
+    ...t.asset.map(v => c("a", "asset", v)),
+    ...t.region.map(v => c("r", "region", v)),
+    ...t.countries.map(v => c("c", "countries", v)),
+    ...t.sector.map(v => c("sec", "sector", v)),
+    ...t.theme.map(v => c("t", "theme", v)),
+    ...t.bond_type.map(v => c("b", "bond_type", v)),
+    ...t.style.map(v => c("st", "style", v)),
+    ...t.mgmt.map(v => c("p", "mgmt", v))
+  ];
+  const idx = t.index.length ? `<span class="lbl">ดัชนีอ้างอิง: ${esc(t.index.join(", "))}</span>` : "";
+  const ex = t.excludes.length ? `<span class="lbl">ไม่รวม ${esc(t.excludes.map(v => lbl("countries", v)).join(", "))}</span>` : "";
+  return `<div class="tags" aria-label="หมวดหมู่">${parts.join("")}${ex}${idx}</div>`;
 }
 
 $("result").addEventListener("click", e => {
   const b = e.target.closest("[data-k]");
   if (b) { const m = MASTER_BY_KEY.get(b.dataset.k); if (m) choose({ type: "master", m }); return; }
-  const l = e.target.closest("[data-letter]"), st = e.target.closest("[data-style]");
-  if (!l && !st) return;
-  if (l) homeLetter = l.dataset.letter;
-  if (st) homeStyle = st.dataset.style;
+  const go = e.target.closest("[data-go]");
+  if (go) {
+    input.value = ""; $("clear").classList.add("hidden");
+    const url = new URL(location); url.search = "?" + new URLSearchParams({ [go.dataset.go]: go.dataset.v });
+    history.replaceState(null, "", url);
+    expanded.clear(); themeQuery = "";
+    showHome(); window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  const sm = e.target.closest("[data-showmore]");
+  if (sm) { showMore = sm.dataset.showmore === "1"; renderHome(); return; }
+  if (e.target.closest("[data-jump]")) { $("homeCount").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  const more = e.target.closest("[data-more]");
+  if (more) { const k = more.dataset.more; expanded.has(k) ? expanded.delete(k) : expanded.add(k); renderHome(); return; }
+  const clr = e.target.closest("[data-clear]");
+  if (clr) { if (clr.dataset.clear === "*") { sel = {}; themeQuery = ""; } else delete sel[clr.dataset.clear]; renderHome(); return; }
+  const ch = e.target.closest("[data-f]");
+  if (!ch) return;
+  const k = ch.dataset.f, v = ch.dataset.v;
+  if (!v || sel[k] === v) delete sel[k]; else sel[k] = v;     // tap again to unselect
   renderHome();
-  // if the list was scrolled, bring its top back into view
-  const card = document.querySelector(".home");
-  if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: "start" });
 });
+
 
 function showMaster(m, hitAbbr) {
   const byProj = new Map();
@@ -671,6 +901,7 @@ function showMaster(m, hitAbbr) {
     <h2><a class="ext" href="https://www.google.com/search?q=${encodeURIComponent(m.name)}" target="_blank" rel="noopener"
          title="ค้นหาข้อมูลกองทุนหลักใน Google (เปิดแท็บใหม่)">${esc(m.name)}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></h2>
     ${m.countries.size ? `<div class="meta">กองทุนหลักจดทะเบียนที่ ${esc([...m.countries].join(", "))}</div>` : `<div class="meta"></div>`}
+    ${tagChips(m)}
     <div class="toolbar">
       <button class="btn" id="copy">คัดลอกชื่อกอง</button>
     </div>
