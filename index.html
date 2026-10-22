@@ -189,6 +189,12 @@
   .tag-detail { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: -4px 0 18px;
                 font-size: 13.5px; line-height: 1.5; }
   .tag-detail dt { color: var(--muted); }
+  .similar { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .similar h3 { margin: 0; font-size: 17px; color: var(--ink); }
+  .similar > .small { margin: 2px 0 8px; }
+  .why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .why span { font-size: 12px; color: #8A5A00; background: #FFF4D6; border-radius: 4px; padding: 2px 7px; }
+  .why span::before { content: "✓ "; }
   .tag-detail dd { margin: 0; color: var(--text); }
   .row-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .tg { font-size: 12px; line-height: 1; padding: 4px 8px; border-radius: 999px; background: #E3EBF7; color: var(--ink); font-weight: 500; }
@@ -710,7 +716,9 @@ const MARKET = [
   ["us",     "สหรัฐฯ",        t => has(t.countries, "United States", "Canada") || (has(t.region, "North America") && !t.countries.length)],
   ["eu",     "ยุโรป",          t => has(t.region, "Europe") || has(t.countries, "Germany", "France", "Italy", "United Kingdom") && t.countries.length <= 2],
   ["jp",     "ญี่ปุ่น",          t => has(t.countries, "Japan") && t.countries.length <= 2],
-  ["cn",     "จีน / ฮ่องกง",    t => has(t.countries, "China", "Hong Kong", "Macau")],
+  ["cn",     "จีน (ทั้งหมด)",    t => has(t.countries, "China", "Hong Kong", "Macau")],
+  ["cna",    "จีน A-shares",      t => has(t.theme, "China A-shares", "STAR Market") || (has(t.countries, "China") && /CSI|SSE|A50|A500/.test(t.index.join(" ")))],
+  ["cnh",    "จีน H-shares / ฮ่องกง", t => has(t.theme, "China H-shares") || has(t.countries, "Hong Kong")],
   ["tw",     "ไต้หวัน",         t => has(t.countries, "Taiwan")],
   ["kr",     "เกาหลีใต้",       t => has(t.countries, "South Korea")],
   ["in",     "อินเดีย",         t => has(t.countries, "India")],
@@ -720,8 +728,11 @@ const MARKET = [
   ["asia",   "เอเชีย",               t => has(t.region, "Asia") && (!t.countries.length || t.countries.length > 2)],
   ["axj",    "เอเชียไม่รวมญี่ปุ่น",     t => has(t.region, "Asia ex Japan")],
   ["apac",   "เอเชียแปซิฟิก",         t => has(t.region, "Asia Pacific") && t.countries.length !== 1],
-  ["em",     "ตลาดเกิดใหม่",     t => has(t.region, "Emerging Markets", "Latin America") || has(t.countries, "Brazil")],
-  ["global", "ทั่วโลก",          t => has(t.region, "Global", "Developed Markets") && t.countries.length !== 1]
+  ["em",     "ตลาดเกิดใหม่",     t => has(t.region, "Emerging Markets")],
+  ["emxc",   "ตลาดเกิดใหม่ไม่รวมจีน", t => has(t.region, "Emerging Markets") && has(t.excludes, "China")],
+  ["latam",  "ละตินอเมริกา / บราซิล", t => has(t.region, "Latin America") || has(t.countries, "Brazil")],
+  ["dm",     "ตลาดพัฒนาแล้ว",     t => has(t.region, "Developed Markets") && t.countries.length !== 1],
+  ["global", "ทั่วโลก",          t => has(t.region, "Global") && t.countries.length !== 1]
 ];
 const THEME = [
   ["tech",   "AI & เทคโนโลยี",          ["Technology", "Technology-heavy", "Artificial Intelligence", "Generative AI", "Cloud Computing", "Software", "Big Data", "Machine Learning", "Quantum Computing", "Digital Economy", "Disruptive Technology", "Next-Gen Technology", "Innovation", "Disruptive Innovation", "New Economy", "STAR Market", "Fintech", "EV"], ["Information Technology"]],
@@ -750,6 +761,8 @@ const FACETS = [
   { k: "a",  title: "ประเภท",  opts: ASSET.map(([v, l]) => [v, l, t => t.asset[0] === v]) },
   { k: "mk", title: "ตลาด",    opts: MARKET,
     tip: "กองที่ลงทุนทั้งภูมิภาค เช่น ตลาดเกิดใหม่ หรือทั่วโลก จะอยู่ในกลุ่มภูมิภาคนั้น ไม่แยกรายประเทศ" },
+  { k: "ix", title: "ดัชนีอ้างอิง", opts: [], byFunds: true,
+    tip: "ดัชนีที่กองหลักติดตาม (Passive) หรือใช้เป็นตัวเทียบ (Active) แสดงเฉพาะดัชนีที่มีกองทุนไทยตั้งแต่ 2 กอง" },
   { k: "th", title: "ธีม",      opts: THEME },
   { k: "p",  title: "การบริหารกองหลัก", opts: MGMT.map(([v, l]) => [v, l, t => t.mgmt.includes(v)]) }
 ];
@@ -760,7 +773,17 @@ let expanded = new Set();
 let sortBy = "count";
 let filtersOpen = false;   // mobile drawer
 
+// "MSCI Korea 20/35 Custom" and "MSCI Korea" count as one index
+const normIndex = x => x.replace(/\s*\(USD hedged\)/i, "").replace(/\s+(20\/35 Custom|25\/50|10\/40)$/i, "").trim();
+function ensureIndexOpts() {
+  const f = FACETS.find(x => x.k === "ix");
+  if (f.opts.length) return;
+  const names = new Set();
+  MASTERS.forEach(m => m.tag.index.forEach(i => names.add(normIndex(i))));
+  f.opts = [...names].map(v => [v, v, t => t.index.some(i => normIndex(i) === v)]);
+}
 function categorize(m) {
+  ensureIndexOpts();
   const t = m.tag;
   m.cat = {};
   FACETS.forEach(f => m.cat[f.k] = f.opts.filter(([, , test]) => test(t)).map(([v]) => v));
@@ -829,8 +852,9 @@ function renderHome() {
     let opts = f.opts.map(([v, label]) => {
       const ms = pool.filter(m => m.cat[f.k].includes(v));
       return { v, label, n: ms.length, funds: ms.reduce((a, m) => a + m.projects, 0) };
-    }).filter(o => s.has(o.v) || o.n >= MIN_GROUP);
+    }).filter(o => s.has(o.v) || (f.byFunds ? o.funds >= MIN_GROUP && o.n : o.n >= MIN_GROUP));
     if (f.k === "th") opts.sort((a, b) => b.n - a.n);
+    if (f.byFunds) opts.sort((a, b) => b.funds - a.funds || a.label.localeCompare(b.label));
     if (opts.length < 2 && !s.size) return "";
     const showAll = expanded.has(f.k) || opts.length <= SHOW + 1;
     const shown = showAll ? opts : opts.filter((o, i) => i < SHOW || s.has(o.v));
@@ -838,7 +862,9 @@ function renderHome() {
     return `<fieldset class="fs"><legend>${f.title}${tip}</legend>
       ${shown.map(o => `<label class="opt-row${o.n ? "" : " zero"}">
         <input type="checkbox" data-f="${f.k}" value="${esc(o.v)}" ${s.has(o.v) ? "checked" : ""}>
-        <span class="ol">${esc(o.label)}</span><span class="on" title="${o.funds} กองไทย">${o.n}</span></label>`).join("")}
+        <span class="ol">${esc(o.label)}</span>${f.byFunds
+          ? `<span class="on" title="${o.n} master fund">${o.funds} กองไทย</span>`
+          : `<span class="on" title="${o.funds} กองไทย">${o.n}</span>`}</label>`).join("")}
       ${opts.length > shown.length ? `<button type="button" class="linkbtn" data-more="${f.k}">ดูเพิ่ม ${opts.length - shown.length} หมวด</button>`
         : expanded.has(f.k) && !(opts.length <= SHOW + 1) ? `<button type="button" class="linkbtn" data-more="${f.k}">ย่อ</button>` : ""}
     </fieldset>`;
@@ -949,6 +975,55 @@ window.addEventListener("popstate", () => {
   else { input.value = ""; $("clear").classList.add("hidden"); closeDropdown(); showHome(); }
 });
 
+// ---------- similar master funds (for comparing) ----------
+// same index tracked > same market + theme > same market or theme; asset class must match unless the index is the same
+let MK_SIZE = null;
+const mkSize = v => {
+  if (!MK_SIZE) { MK_SIZE = new Map(); MASTERS.forEach(o => { if (!o.cat) categorize(o); o.cat.mk.forEach(k => MK_SIZE.set(k, (MK_SIZE.get(k) || 0) + 1)); }); }
+  return MK_SIZE.get(v) || 0;
+};
+function similar(m, limit = 6) {
+  if (!m.cat) categorize(m);
+  const t = m.tag; if (t === UNTAGGED) return [];
+  const myIx = t.index.map(normIndex);
+  const out = [];
+  for (const o of MASTERS) {
+    if (o === m) continue;
+    if (!o.cat) categorize(o);
+    const u = o.tag, why = [];
+    let sc = 0;
+    const sameIx = myIx.length && u.index.some(i => myIx.includes(normIndex(i)));
+    if (sameIx) { sc += t.mgmt[0] === "Passive" && u.mgmt[0] === "Passive" ? 100 : 45; why.push("ดัชนีเดียวกัน"); }
+    if (u.asset[0] !== t.asset[0] && !sameIx) continue;
+    const mk = o.cat.mk.filter(v => m.cat.mk.includes(v));
+    // most specific shared market first (e.g. "จีน H-shares" before "จีน (ทั้งหมด)")
+    const specific = mk.filter(v => !["global", "dm"].includes(v)).sort((a, b) => mkSize(a) - mkSize(b));
+    if (specific.length) { sc += 25 + 8 * (specific.length - 1); why.push(optLabel("mk", specific[0])); }
+    else if (mk.length) sc += 8;
+    const th = o.cat.th.filter(v => m.cat.th.includes(v));
+    if (th.length) { sc += 20 * th.length; why.push(...th.map(v => optLabel("th", v))); }
+    const exact = u.theme.filter(v => t.theme.includes(v)).length;
+    sc += 6 * exact;
+    const bt = u.bond_type.filter(v => t.bond_type.includes(v));
+    if (bt.length) { sc += 12 * bt.length; why.push(bt[0]); }
+    if (!specific.length && !th.length && !sameIx && !bt.length) continue;   // only "global equity" in common is not similar enough
+    sc += 4 * u.style.filter(v => t.style.includes(v)).length;   // e.g. both large-cap
+    if (u.mgmt[0] === t.mgmt[0]) sc += 3;
+    out.push({ o, sc, why: [...new Set(why)].slice(0, 3) });
+  }
+  return out.sort((a, b) => b.sc - a.sc || b.o.projects - a.o.projects).slice(0, limit);
+}
+function similarHtml(m) {
+  const list = similar(m);
+  if (!list.length) return "";
+  return `<div class="similar"><h3>Master fund ที่ใกล้เคียง</h3>
+    <p class="small">ไว้เทียบทางเลือก เรียงจากใกล้เคียงที่สุด: ดัชนีเดียวกัน › ตลาดและธีมเดียวกัน</p>
+    <ul class="top-list">${list.map(({ o, why }) => `<li><button data-k="${esc(norm(o.name))}">
+      <span class="nm"><span class="mn">${esc(o.name)}</span>${rowTags(o)}
+      <span class="why">${why.map(w => `<span>${esc(w)}</span>`).join("")}</span></span>
+      <span class="count" title="จำนวนกองทุนไทยที่ลงทุน">${o.projects} กอง</span></button></li>`).join("")}</ul></div>`;
+}
+
 function showMaster(m, hitAbbr) {
   const byProj = new Map();
   for (const r of m.rows) {
@@ -988,6 +1063,7 @@ function showMaster(m, hitAbbr) {
       <thead><tr><th class="c-fund">ชื่อกองทุน</th><th class="c-amc">บลจ.</th><th class="c-cls">Class</th><th class="c-st">กลยุทธ์ลงทุน</th><th class="c-fx">นโยบายค่าเงิน</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table></div>
+    ${similarHtml(m)}
     ${variants.length ? `<div class="variants">ชื่อ master fund ตามที่แต่ละ บลจ. ระบุใน SEC:<ul>${variants.map(v => `<li>${esc(v)}</li>`).join("")}</ul></div>` : ""}
   </div>`;
 
