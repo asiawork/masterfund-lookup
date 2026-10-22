@@ -261,7 +261,7 @@
 260,Goldman Sachs Global Future Generations Equity Portfolio,3,Equity,Global,,,Consumer Discretionary;Communication Services,Next-Gen Consumer;Millennials,Growth,,Active,,H,SEC investment policy,
 261,T. Rowe Price Funds SICAV - Global Technology Equity Fund,3,Equity,Global,,,Information Technology,Technology,,,Active,,H,SEC investment policy,
 262,Invesco S&P 500 Momentum ETF,3,Equity,North America,United States,,,,Momentum;Large Cap,S&P 500 Momentum,Passive,,H,SEC investment policy,
-263,Roundhill Memory ETF,3,Equity,Global,,,Information Technology,Semiconductor;Memory,,,Passive,,L,SEC investment policy,
+263,Roundhill Memory ETF,3,Equity,Global,,,Information Technology,Semiconductor;Memory,,,Active,,H,SEC investment policy,y
 264,Wellington Global Impact Fund,3,Equity,Global,,,,Impact/ESG,,,Active,,H,SEC investment policy,
 265,Lazard Global Thematic Focus Fund,3,Equity,Global,,,,Thematic,Quality,MSCI ACWI,Active,,H,SEC investment policy,
 266,KKR Infrastructure Fund SICAV SA - I,3,Alternative,Global,,,Utilities;Industrials,Private Infrastructure,,,Active,,H,SEC investment policy,
@@ -497,7 +497,7 @@
 496,Fullerton Lux Funds - Global Absolute Alpha,1,Alternative,Global,,,,Absolute Return,,,Active,,M,SEC investment policy,
 497,Fullerton Thai Private Equity Fund ภายใต้ Fullerton Alternatives Fund 2 VCC,1,Alternative,Asia,Thailand,,,Private Equity,,,Active,,H,SEC investment policy,
 498,Invesco Solar ETF,1,Equity,Global,,,Information Technology;Utilities,Solar;Clean Energy,,MAC Global Solar Energy,Passive,,M,SEC investment policy,
-499,Corgi Lithography & Semiconductor Photonics ETF,1,Equity,Global,,,Information Technology,Semiconductor;Lithography;Photonics,,,Passive,,L,SEC investment policy,
+499,Corgi Lithography & Semiconductor Photonics ETF,1,Equity,Global,,,Information Technology,Semiconductor;Lithography;Photonics,,,Active,,H,SEC investment policy,y
 500,Sprott Critical Materials ETF,1,Equity,Global,,,Materials,Critical Minerals;Energy Transition Metals,,,Passive,,M,SEC investment policy,
 501,Global X Defense Tech ETF,1,Equity,Global,,,Industrials;Information Technology,Defense Technology,,Global X Defense Tech,Passive,,H,SEC investment policy,
 502,Global X Management Company LLC,1,Equity,Global,,,Industrials;Information Technology,Defense Technology,,Global X Defense Tech,Passive,,H,SEC investment policy,
