@@ -66,10 +66,10 @@
 65,UTI Indian Dynamic Equity Fund,8,Equity,Asia,India,,,,Growth;Quality,,Active,,H,SEC investment policy,
 66,VanEck Indonesia Index ETF,8,Equity,Asia,Indonesia,,,,,MVIS Indonesia,Passive,,H,SEC investment policy,
 67,PIMCO Global Investment Grade Credit,8,Fixed Income,Global,,,,,,,Active,Investment Grade;Corporate Credit,H,SEC investment policy,
-68,BlackRock Advantage US Equity Fund,8,Equity,North America,United States,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
+68,BlackRock Advantage US Equity Fund,8,Equity,North America,United States,,,,,,Active,,H,SEC investment policy,y
 69,Baillie Gifford Worldwide Discovery Fund,8,Equity,Global,,,,,Small Cap;Growth,,Active,,H,SEC investment policy,
 70,BlackRock Global Unconstrained Equity Fund,8,Equity,Developed Markets,,,,,Growth;Quality,,Active,,H,SEC investment policy,
-71,iShare Digital Entertainment and Education UCITS ETF,8,Equity,Global,,,Communication Services,Digital Entertainment;EdTech;ESG/Sustainable,,STOXX Global Digital Entertainment and Education,Passive,,H,SEC investment policy,
+71,iShare Digital Entertainment and Education UCITS ETF,8,Equity,Global,,,Communication Services,Digital Entertainment;EdTech,,STOXX Global Digital Entertainment and Education,Passive,,H,SEC investment policy,y
 72,Fundsmith SICAV-Fundsmith Equity Fund,8,Equity,Global,,,,,Quality,,Active,,H,SEC investment policy,
 73,DCVFMVN30 ETF,8,Equity,Asia,Vietnam,,,,Large Cap,VN30,Passive,,H,SEC investment policy,
 74,Ashoka WhiteOak India Opportunities Fund,8,Equity,Asia,India,,,,,,Active,,H,SEC investment policy,
@@ -113,7 +113,7 @@
 112,Hamilton Lane Global Private Assets Fund,6,Alternative,Global,,,,Private Equity;Private Assets,,,Active,,H,SEC investment policy,
 113,iShares MSCI South Korea ETF,6,Equity,Asia,South Korea,,,,,MSCI Korea 25/50,Passive,,H,SEC investment policy,
 114,AXA WORLD FUNDS US High Yield Bonds USD Fund,6,Fixed Income,North America,United States,,,,,,Active,High Yield,H,SEC investment policy,
-115,E.P.I.C. Global Equity Opportunities Fund,6,Equity,Global,,,,ESG/Sustainable,,,Active,,M,SEC investment policy,
+115,E.P.I.C. Global Equity Opportunities Fund,6,Equity,Global,,,,,,,Active,,M,SEC investment policy,y
 116,JPMorgan Funds - Asia Growth Fund,6,Equity,Asia ex Japan,,,,,Growth,,Active,,H,SEC investment policy,
 117,Henderson Horizon Fund - Japanese Smaller Companies Fund,6,Equity,Asia,Japan,,,,Small Cap,,Active,,H,SEC investment policy,
 118,Fidelity Funds - Japan Value Fund,6,Equity,Asia,Japan,,,,Value,,Active,,H,SEC investment policy,
@@ -234,7 +234,7 @@
 233,Man AHL TargetRisk,3,Multi-Asset,Global,,,,Risk Parity;Systematic,,,Active,,H,SEC investment policy,
 234,abrdn SICAV II - Global Smaller Companies Fund,3,Equity,Global,,,,,Small Cap,,Active,,H,SEC investment policy,
 235,abrdn SICAV I - China A Share Sustainable Equity Fund,3,Equity,Asia,China,,,China A-shares;ESG/Sustainable,,,Active,,H,SEC investment policy,
-236,abrdn SICAV I - Future Global Equity Fund,3,Equity,Global,,,,Future Themes;ESG/Sustainable,Growth,,Active,,M,SEC investment policy,
+236,abrdn SICAV I - Future Global Equity Fund,3,Equity,Global,,,,Future Themes,Growth,,Active,,M,SEC investment policy,y
 237,abrdn SICAV I - Short Dated Enhanced Income Fund,3,Fixed Income,Global,,,,,,,Active,Short Duration;Multi-sector,H,SEC investment policy,
 238,abrdn Pacific Equity Fund,3,Equity,Asia ex Japan,,,,,,,Active,,H,SEC investment policy,
 239,Xtrackers Artificial Intelligence & Big Data UCITS ETF,3,Equity,Global,,,Information Technology,Artificial Intelligence;Big Data,,Nasdaq Global Artificial Intelligence and Big Data,Passive,,H,SEC investment policy,
@@ -392,9 +392,9 @@
 391,Amundi Global Memory Chips UCITS ETF,1,Equity,Global,,,Information Technology,Semiconductor;Memory,,,Passive,,H,SEC investment policy,
 392,iShares MSCI Korea UCITS ETF,1,Equity,Asia,South Korea,,,,,MSCI Korea,Passive,,H,SEC investment policy,
 393,PIMCO Commodity Real Return Fund,1,Commodity,Global,,,,Broad Commodities,,Bloomberg Commodity,Active,,H,SEC investment policy,
-394,abrdn SICAV I - Indian Equity Fund,1,Equity,Asia,India,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
+394,abrdn SICAV I - Indian Equity Fund,1,Equity,Asia,India,,,,,,Active,,H,SEC investment policy,y
 395,abrdn SICAV I - Global Sustainable Equity Fund,1,Equity,Global,,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
-396,abrdn SICAV I - Emerging Markets Equity Fund,1,Equity,Emerging Markets,,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
+396,abrdn SICAV I - Emerging Markets Equity Fund,1,Equity,Emerging Markets,,,,,,,Active,,H,SEC investment policy,y
 397,abrdn SICAV I - Select Emerging Markets Bond Fund,1,Fixed Income,Emerging Markets,,,,,,,Active,EM Debt,H,SEC investment policy,
 398,abrdn SICAV I - European Sustainable Equity Fund,1,Equity,Europe,,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
 399,abrdn SICAV I - Japanese Sustainable Equity Fund,1,Equity,Asia,Japan,,,ESG/Sustainable,,,Active,,H,SEC investment policy,
@@ -515,7 +515,7 @@
 514,KIM Investment Funds - KIM Vietnam Growth Fund,1,Equity,Asia,Vietnam,,,,Growth,,Active,,H,SEC investment policy,
 515,Matthews Asia Funds - China Innovators Fund,1,Equity,Asia,China;Hong Kong;Taiwan,,,Innovation,All Cap,,Active,,H,SEC investment policy,
 516,HSBC HANG SENG TECH UCITS ETF,1,Equity,Asia,Hong Kong;China,,Information Technology,Technology,,Hang Seng TECH,Passive,,H,SEC investment policy,
-517,BNP Paribas Funds Aqua,1,Equity,Global,,,Utilities;Industrials,Water;ESG/Sustainable,,,Active,,H,SEC investment policy,
+517,BNP Paribas Funds Aqua,1,Equity,Global,,,Utilities;Industrials,Water,,,Active,,H,SEC investment policy,y
 518,Amundi Global Hydrogen UCITS ETF,1,Equity,Global,,,Industrials;Energy,Hydrogen;Clean Energy,,Bloomberg Hydrogen Screened,Passive,,H,SEC investment policy,
 519,Xtrackers MSCI Korea UCITS ETF,1,Equity,Asia,South Korea,,,,Large Cap;Mid Cap,MSCI Korea 20/35 Custom,Passive,,H,SEC investment policy,
 520,Defiance Drone & Modern Warfare ETF,1,Equity,Developed Markets,,,Industrials;Information Technology,Drones;Defense Technology,,BITA Drone & Modern Warfare Select,Passive,,H,SEC investment policy,
