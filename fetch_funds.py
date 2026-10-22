@@ -98,7 +98,7 @@ if not df.empty:
                 "proj_abbr_name": r.get("proj_abbr_name"),
                 "master_fund": r.get("Master_Fund_Search"),
                 "policy_desc": _clean(r.get("policy_desc")),
-                "investment_policy_desc": _clean(r.get("investment_policy_desc")),
+                "investment_policy_desc": _clean(r.get("investment_policy_desc"))[:2000],
             }
     import json
     with open("policy_data.json", "w", encoding="utf-8") as fp:
