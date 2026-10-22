@@ -83,6 +83,28 @@ if not df.empty:
     records = annotate(df.to_dict("records"))
     df = pd.DataFrame(records)
 
+    # 6.1 เก็บนโยบายการลงทุนแยกไฟล์ (ไว้ใช้ติด tag จัดกลุ่ม master fund ไม่โหลดในหน้าเว็บ)
+    import html as _html
+    def _clean(t):
+        if not t or str(t) in ["None", "nan"]:
+            return ""
+        t = re.sub(r"<[^>]+>", " ", _html.unescape(str(t)))
+        return " ".join(t.split())
+    policy = {}
+    for r in records:
+        pid = r.get("proj_id")
+        if pid and pid not in policy:
+            policy[pid] = {
+                "proj_abbr_name": r.get("proj_abbr_name"),
+                "master_fund": r.get("Master_Fund_Search"),
+                "policy_desc": _clean(r.get("policy_desc")),
+                "investment_policy_desc": _clean(r.get("investment_policy_desc")),
+            }
+    import json
+    with open("policy_data.json", "w", encoding="utf-8") as fp:
+        json.dump(policy, fp, ensure_ascii=False, indent=0)
+    print(f"บันทึก policy_data.json สำเร็จ ({len(policy)} โครงการ)")
+
     # 7. คัดเลือกเฉพาะคอลัมน์ที่ต้องการ (นำ policy_desc และ investment_policy_desc ออกแล้ว)
     desired_cols = [
         "unique_id", "comp_name_th", "comp_name_en", "proj_id", "regis_id", 
